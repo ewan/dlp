@@ -7,3 +7,4 @@ data needed to run the models described in Dillon, Dunbar, and Idsardi, 2012 (DO
 
 java: dlp-java source
 R: dlp R interface source
+data: example data
