@@ -1,2 +1,9 @@
+README
+
+dlp is a simple vanilla Gibbs sampler written in Java with an R interface.
+It is oriented towards Gaussian mixture models and contains model code and
+data needed to run the models described in Dillon, Dunbar, and Idsardi, 2012 (DOI:
+10.1111/cogs.12008).
+
 java: dlp-java source
 R: dlp R interface source
