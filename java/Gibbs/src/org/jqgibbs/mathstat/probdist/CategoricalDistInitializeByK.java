@@ -1,8 +1,6 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Integer0D;
@@ -10,74 +8,37 @@ import org.jqgibbs.mathstat.Numeric;
 
 public class CategoricalDistInitializeByK extends AbstractCategoricalDist {
 
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<Class<? extends Numeric<?>>> parmClasses;
-	private List<String> parmNames;
-
-	public CategoricalDistInitializeByK(Numeric<?>... parms)
+	public CategoricalDistInitializeByK(Integer0D K, boolean checkParms)
 			throws ProbDistParmException {
-		super(parms);
+		double p[] = new double[K.value()];
+		Arrays.fill(p, 1 / K.value());
+		Double1D P = new Double1D(p);
+		this.P = P;
+		this.K = K;
+		if(checkParms) {
+			checkParms();
+		}
 	}
-
+	
 	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(2);
-		this.parmNames.add("K");
-		this.parmNames.add("P");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(2);
-		this.parmCheck.add(new ProbDistParmCheck[] { new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Integer0D d = (Integer0D) o;
-				return (d.value() > 0);
-			}
-
-			public String message() {
-				return "Must be positive";
-			}
-		} });
-		this.parmCheck.add(null);
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(1);
-		this.parmClasses.add(Integer0D.class);
-		this.parmClasses.add(null);
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length > 0) {
+			this.K = (Integer0D)parms[0];
+			double p[] = new double[this.K.value()];
+			Arrays.fill(p, 1 / this.K.value());
+			this.P = new Double1D(p);
+			this.setUpEmpiricalGen();
+		}
 	}
-
-	@Override
-	protected Integer0D getK() {
-		return (Integer0D) this.parms[0];
+	
+	public CategoricalDistInitializeByK(Integer0D K) 
+			throws ProbDistParmException {
+		this(K, CHECK_PARMS);
 	}
-
-	@Override
-	protected Double1D getP() {
-		return (Double1D) this.parms[1];
-	}
-
-	private void setP(Double1D p) {
-		this.parms[1] = p;
-	}
-
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
-	}
-
-	@Override
-	protected void setUpFromParms() {
-		double p[] = new double[this.getK().value()];
-		Arrays.fill(p, 1 / this.getK().value());
-		this.setP(new Double1D(p));
-		this.setUpEmpiricalGen();
+	
+	private void checkParms() throws ProbDistParmException{
+		if(K.value() <= 0) {
+			throw new ProbDistParmException("Expected positive value for K");
+		}
 	}
 }

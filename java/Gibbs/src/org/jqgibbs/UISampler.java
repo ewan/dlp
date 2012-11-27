@@ -3,8 +3,6 @@ package org.jqgibbs;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import jline.*;
-
 public class UISampler implements Runnable {
 	private Chain c;
 	private Thread ts;

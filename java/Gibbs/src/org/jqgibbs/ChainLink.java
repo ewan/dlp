@@ -1,6 +1,5 @@
 package org.jqgibbs;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,9 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.transform.dom.DOMResult;
-
-import org.jqgibbs.mathstat.AbstractSequence;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Numeric;
@@ -20,8 +16,7 @@ import org.jqgibbs.mathstat.RandomVar;
  * TODO
  * Is it appropriate to have a new Exception subclass here?
  */
-public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
-	implements Cloneable {
+public class ChainLink implements Cloneable, Iterable<RandomVar<?>>, Numeric {
 
 	// FIXME - shouldn't this be a ListSequence?
 	private Map<String, RandomVar<?>> m;
@@ -47,7 +42,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		return this.getOrder().add(gv.getName());
 	}
 	
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 1;
 		for (RandomVar<?> gv : this.getM().values()) {
@@ -56,7 +51,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		return h;
 	}
 	
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof ChainLink)) {
 			return false;
@@ -66,7 +61,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		}
 	}
 	
-	@Override
+	//@Override
 	public String toString() {
 //		String cap = "]";
 //		String s = "[";
@@ -143,32 +138,32 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		return (Object) clone;
 	}
 
-	@Override
+	//@Override
 	public ChainLink getAll(int... is) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	//@Override
 	public ChainLink cloneFromVector(Double1D v) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	//@Override
 	public int length1D() {
 		int n = 0;
-		for (RandomVar<? extends Numeric<?>> rv : this) {
+		for (RandomVar<?> rv : this) {
 			n += rv.length1D();
 		}		
 		return n;
 	}
 	
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		List<Double1D> ld = new LinkedList<Double1D>();
 		int ncol = 0;
-		for (RandomVar<? extends Numeric<?>> rv : this) {
+		for (RandomVar<?> rv : this) {
 			Double1D v = rv.rowVec();
 			ld.add(v);
 			ncol += v.size();
@@ -188,7 +183,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 	public Map<String,Integer1D> getOrderMap() {
 		Map<String,Integer1D> om = new HashMap<String,Integer1D>();
 		int k=0;
-		for (RandomVar<? extends Numeric<?>> rv : this) {
+		for (RandomVar<?> rv : this) {
 			int length = rv.length1D();
 			int[] is = new int[length];
 			for (int i=0; i<length; i++) {
@@ -201,7 +196,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		return om;
 	}
 
-	@Override
+	//@Override
 	public RandomVar<?> set(int i, RandomVar<?> t)
 			throws IndexOutOfBoundsException {
 		// TODO Auto-generated method stub
@@ -218,7 +213,7 @@ public class ChainLink extends AbstractSequence<ChainLink,RandomVar<?>>
 		int actualLength = 0;
 		for (String n : flatOm.keySet()) {
 			int firstIndex = flatOm.get(n).value()[0];			
-			RandomVar<? extends Numeric<?>> v = this.get(n);
+			RandomVar<?> v = this.get(n);
 			double[] fv = v.rowVec().value();
 			if (actualLength + fv.length > length) {
 				throw new IllegalArgumentException("Provided inappropriate order map");				

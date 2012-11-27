@@ -11,7 +11,7 @@ import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 import cern.colt.matrix.linalg.CholeskyDecomposition;
 import cern.jet.math.Functions;
 
-public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
+public class Integer2D implements Numeric {
 
 	int[][] ints;
 
@@ -36,7 +36,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 	}
 
 	public Integer2D(int m, int n, List<int[]> indices,
-			AbstractSequence<?, Integer0D> values) {
+			List<Integer0D> values) {
 		if (!(indices.size() == values.size())) {
 			throw new IllegalArgumentException(
 					"Length of indices was different from "
@@ -122,7 +122,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return new Integer1D(v);
 	}
 
-	@Override
+	//@Override
 	public Integer2D getAll(int... iis) {
 		int[][] is = this.value();
 		int[][] all = new int[iis.length][this.numCols()];
@@ -136,7 +136,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return new Integer2D(all);
 	}
 
-	@Override
+	//@Override
 	public Integer1D set(int i, Integer1D t) {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException(
@@ -154,12 +154,12 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return this.numRows();
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Integer2D(Arrays.copyOf(this.value(), this.numRows()));
 	}
 
-	@Override
+	//@Override
 	public Integer2D cloneFromVector(Double1D v) {
 		int[][] is = new int[this.numRows()][this.numCols()];
 		int k = 0;
@@ -177,7 +177,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return new Integer2D(is);
 	}
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Integer2D)) {
 			return false;
@@ -185,7 +185,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return this.value() == ((Integer2D) o).value();
 	}
 
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 0;
 		for (int i = 0; i < this.size(); i++) {
@@ -375,7 +375,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 	// return new Double1D(sum);
 	// }
 
-	@Override
+	//@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
@@ -388,7 +388,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return s;
 	}
 
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		double[] ds = new double[this.numRows() * this.numCols()];
 		int k = 0;
@@ -402,7 +402,7 @@ public class Integer2D extends AbstractSequence<Integer2D, Integer1D> {
 		return new Double1D(ds);
 	}
 
-	@Override
+	//@Override
 	public int length1D() {
 		return this.numCols() * this.numRows();
 	}

@@ -27,7 +27,7 @@ import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeDirectly;
+import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.mathstat.probdist.SeqCategoricalDist;

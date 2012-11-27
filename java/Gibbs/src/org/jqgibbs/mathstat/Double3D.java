@@ -10,7 +10,7 @@ import cern.colt.matrix.impl.DenseDoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix3D;
 import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 
-public class Double3D extends AbstractSequence<Double3D, Double2D> {
+public class Double3D implements Numeric, Iterable<Double2D> {
 	private DoubleMatrix3D dm;
 	
 	public Double3D(Double2D... d2Ds) {
@@ -200,12 +200,12 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return this.getDm();
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Double3D(this.toColt().copy());
 	}
 
-	@Override
+	//@Override
 	public Double3D getAll(int... dis) {
 		double[][][] d = this.value();
 		double[][][] all = new double[dis.length][d[0].length][d[0][0].length];
@@ -221,7 +221,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return new Double3D(all);
 	}
 
-	@Override
+	//@Override
 	public Double3D cloneFromVector(Double1D v) {
 		double[][][] ds = new double[this.size()][this.numRows()][this.numCols()];
 		int l = 0;
@@ -242,7 +242,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return new Double3D(ds);
 	}
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Double3D)) {
 			return false;
@@ -250,7 +250,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return this.value() == ((Double3D) o).value();
 	}
 
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 0;
 		for (int i=0; i<this.size(); i++) {
@@ -259,7 +259,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return h;
 	}
 
-	@Override
+	//@Override
 	public Double2D set(int i, Double2D t) {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException("Tried to set index out of range"); // FIXME
@@ -277,7 +277,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 	}
 	
 
-	@Override
+	//@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
@@ -292,7 +292,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return s;
 	}
 
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		double dd[] = new double[this.size()*this.numRows()*this.numCols()];
 		int k = 0;
@@ -306,7 +306,7 @@ public class Double3D extends AbstractSequence<Double3D, Double2D> {
 		return new Double1D(dd);
 	}	
 	
-	@Override
+	//@Override
 	public int length1D() {
 		return this.size()*this.numCols()*this.numRows();
 	}

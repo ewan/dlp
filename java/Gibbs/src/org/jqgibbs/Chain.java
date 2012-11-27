@@ -42,37 +42,7 @@ public class Chain extends Observable implements List<ChainLink> {
 		matrix, model, parametercolumns, name, hypers, namedrow, namedmatrix, dims, namedvalue
 	}
 
-	//
-	// private static class DTDReplacer extends EventReaderDelegate {
-	// private final XMLEvent dtd;
-	// private boolean sendDtd = false;
-	//
-	// private DTDReplacer(XMLEventReader reader, XMLEvent dtd) {
-	// super(reader);
-	// if (dtd.getEventType() != XMLEvent.DTD) {
-	// throw new IllegalArgumentException("" + dtd);
-	// }
-	// this.dtd = dtd;
-	// }
-	//
-	// @Override
-	// public XMLEvent nextEvent() throws XMLStreamException {
-	// if (sendDtd) {
-	// sendDtd = false;
-	// return this.dtd;
-	// }
-	// XMLEvent evt = super.nextEvent();
-	// if (evt.getEventType() == XMLEvent.START_DOCUMENT) {
-	// sendDtd = true;
-	// } else if (evt.getEventType() == XMLEvent.DTD) {
-	// return super.nextEvent(); // Discard old DTD
-	// }
-	// return evt;
-	// }
-	//
-	// }
-
-	private static Numeric<? extends Numeric<?>> nodeToValue(Node n) {
+	private static Numeric nodeToValue(Node n) {
 		n.normalize();
 		Node v = n.getFirstChild();
 		Node type = n.getAttributes().getNamedItem("type");
@@ -93,7 +63,7 @@ public class Chain extends Observable implements List<ChainLink> {
 			if (v.getNodeType() != Node.ELEMENT_NODE) {
 				continue;
 			}
-			Numeric<? extends Numeric<?>> d = Chain.nodeToValue(v);
+			Numeric d = Chain.nodeToValue(v);
 			if (d instanceof Double0D) {
 				d1D.add((Double0D) d);
 			} else {
@@ -130,7 +100,7 @@ public class Chain extends Observable implements List<ChainLink> {
 		NodeList nl = n.getChildNodes();
 		Node m;
 		String modelName = null; // FIXME - also below!
-		Map<String, Numeric<? extends Numeric<?>>> hypers = null;
+		Map<String, Numeric> hypers = null;
 		Model model = null;
 		int dims = 0; // FIXME -especially here..
 		for (int i = 0; i < nl.getLength(); i++) {
@@ -157,7 +127,7 @@ public class Chain extends Observable implements List<ChainLink> {
 							break;
 						}
 					}
-					Numeric<? extends Numeric<?>> dn = Chain.nodeToValue(mm);
+					Numeric dn = Chain.nodeToValue(mm);
 					if (dn instanceof Double0D) {
 						dims = (int) ((Double0D) dn).value();
 					} else if (dn instanceof Integer0D) {
@@ -186,11 +156,11 @@ public class Chain extends Observable implements List<ChainLink> {
 		return model;
 	}
 
-	private static Map<String, Numeric<? extends Numeric<?>>> nodeToMap(Node n)
+	private static Map<String, Numeric> nodeToMap(Node n)
 			throws GibbsException {
 		NodeList nl = n.getChildNodes();
 		Node c;
-		Map<String, Numeric<? extends Numeric<?>>> m = new HashMap<String, Numeric<? extends Numeric<?>>>();
+		Map<String, Numeric> m = new HashMap<String, Numeric>();
 		String s;
 		for (int i = 0; i < nl.getLength(); i++) {
 			c = nl.item(i);
@@ -238,6 +208,78 @@ public class Chain extends Observable implements List<ChainLink> {
 	public Chain() {
 		this.flattened = false;
 		this.setC(new LinkedList<ChainLink>());
+	}
+
+	public Chain(String filename, Map<String, Class<? extends Model>> modelTable)
+			throws GibbsException {
+		// Create empty chain
+		super();
+		// // Replace the DTD (or add one if there isn't one) with the
+		// // DTD for our file format
+		// XMLEventFactory ef = XMLEventFactory.newInstance();
+		// XMLEvent dtd = ef.createDTD(Chain.localDoctype);
+		// XMLInputFactory inFactory = XMLInputFactory.newInstance();
+		// inFactory.setProperty("javax.xml.stream.isValidating", "true");
+		try {
+			// // To replace the DTD, construct an EventReaderDelegate that
+			// filters
+			// // the output of the (XMLEventReader's) nextEvent() method
+			// XMLEventReader reader = inFactory
+			// .createXMLEventReader(new StreamSource(filename));
+			// reader = new DTDReplacer(reader, dtd);
+			// // Jump through some hoops to install the filter
+			// StAXSource ss = new StAXSource(reader);
+			// TransformerFactory tf = TransformerFactory.newInstance();
+			// Transformer t = tf.newTransformer();
+			// // Parse the XML
+			// DOMResult d = new DOMResult();
+			// t.transform(ss, d);
+			File xmlFile = new File(filename);
+			Document d = DOMValidateDTD.validatedDOM(xmlFile,
+					Chain.localDTD);
+			Node root = d.getDocumentElement();
+			root.normalize();
+			// Extract elements
+			NodeList nl = root.getChildNodes();
+			Node n;
+			Double2D matrix = null;
+			Map<String, Integer1D> namesToColumns = null;
+			for (int i = 0; i < nl.getLength(); i++) {
+				n = nl.item(i);
+				if (n.getNodeType() != Node.ELEMENT_NODE) {
+					continue;
+				}
+				try {
+					switch (Chain.NodeName.valueOf(n.getNodeName())) {
+					case matrix:
+						matrix = Chain.nodeToMatrix(n);
+						break;
+					case model:
+						this.setModel(Chain.nodeToModel(n, modelTable));
+						break;
+					case parametercolumns:
+						namesToColumns = Chain.nodeToMapInteger1D(n);
+						break;
+					}
+				} catch (IllegalArgumentException e) {
+					assert false; // Should never get here, since we validated
+				}
+			}
+			for (Double1D r : matrix) {
+				this.getC()
+						.add(this.getModel().getChainLink(r, namesToColumns));
+			}
+		} catch (FileNotFoundException e) {
+			throw new GibbsException("Error opening chain file", e);
+		} catch (IOException e) {
+			throw new GibbsException("Error reading chain file", e);
+		} catch (SAXException e) {
+			throw new GibbsException("Error reading chain file", e);
+		} catch (TransformerConfigurationException e) {
+			throw new GibbsException("Error initializing XML reader", e);
+		} catch (TransformerException e) {
+			throw new GibbsException("Error parsing chain file", e);
+		}
 	}
 
 	public synchronized void addLink(ChainLink l) {

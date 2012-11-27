@@ -5,9 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-
-import au.com.bytecode.opencsv.*;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -15,8 +12,9 @@ import java.util.List;
 
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.AbstractSequence;
 import org.jqgibbs.mathstat.Numeric;
+
+import au.com.bytecode.opencsv.CSVReader;
 
 /*
  * TODO
@@ -25,7 +23,9 @@ import org.jqgibbs.mathstat.Numeric;
  * 
  * This class seems like a *mistake*. Just use Double2D and set up a reader class.
  */
-public class SamplerData extends AbstractSequence<SamplerData, Double1D> {
+
+//extends AbstractSequence<SamplerData, Double1D>
+public class SamplerData implements Numeric {
 
 	private List<String> colNames;
 	private Double2D numericValue;
@@ -87,43 +87,43 @@ public class SamplerData extends AbstractSequence<SamplerData, Double1D> {
 		return numericValue;
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new SamplerData(this.getNumericValue(), this.getColNames());
 	}
 
-	@Override
+	//@Override
 	public Double1D get(int i) {
 		return this.getNumericValue().get(i);
 	}
 
-	@Override
+	//@Override
 	public SamplerData getAll(int... dis) {
 		return new SamplerData(this.getNumericValue().getAll(dis), this
 				.getColNames());
 	}
 
-	@Override
+	//@Override
 	public boolean add(Double1D e) {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
+	//@Override
 	public boolean addAll(Collection<? extends Double1D> c) {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
+	//@Override
 	public boolean contains(Object o) {
 		return this.getNumericValue().contains(o);
 	}
 
-	@Override
+	//@Override
 	public Iterator<Double1D> iterator() {
 		return this.getNumericValue().iterator();
 	}
 
-	@Override
+	//@Override
 	public int size() {
 		return this.getNumericValue().size();
 	}
@@ -140,7 +140,7 @@ public class SamplerData extends AbstractSequence<SamplerData, Double1D> {
 		return this.getNumericValue().sum();
 	}
 
-	@Override
+	//@Override
 	public SamplerData cloneFromVector(Double1D v) {
 		return new SamplerData(this.getNumericValue()
 				.cloneFromVector(v));
@@ -151,19 +151,19 @@ public class SamplerData extends AbstractSequence<SamplerData, Double1D> {
 		return this.get(0).size();
 	}
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	@Override
+	//@Override
 	public int hashCode() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
+	//@Override
 	public Double1D set(int i, Double1D t) throws IndexOutOfBoundsException {
 		// TODO Auto-generated method stub
 		return null;
@@ -184,13 +184,13 @@ public class SamplerData extends AbstractSequence<SamplerData, Double1D> {
 		this.setNumericValue(new Double2D(c));
 	}
 
-	@Override
+	//@Override
 	public int length1D() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		// TODO Auto-generated method stub
 		return null;

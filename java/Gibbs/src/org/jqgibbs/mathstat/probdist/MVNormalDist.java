@@ -1,13 +1,7 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Numeric;
-
-import cern.colt.matrix.DoubleMatrix2D;
 
 import umontreal.iro.lecuyer.probdistmulti.MultiNormalDist;
 import umontreal.iro.lecuyer.randvar.NormalGen;
@@ -17,19 +11,22 @@ import umontreal.iro.lecuyer.rng.MRG32k3a;
 import umontreal.iro.lecuyer.rng.RandomStream;
 import umontreal.iro.lecuyer.rng.RandomStreamFactory;
 
-public class MVNormalDist extends ProbDistInitializeDirectly<Double1D> {
+public class MVNormalDist extends ProbDist<Double1D> {
 
 	private NormalGen normalGen;
 	private MultinormalCholeskyGen mvnGen;
 	private MultiNormalDist mvnDist;
 	
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<String> parmNames;
-	private List<Class<? extends Numeric<?>>> parmClasses;
+	private Double1D Mu;
+	private Double2D Sg;
 	
 	private double log2Pi = Math.log(2*Math.PI);
 	private double logDetSg;
 	private Double2D sgInv;
+	
+	public MVNormalDist() {
+		// Empty (fix?)
+	}
 	
 	protected double getLog2Pi() {
 		return this.log2Pi;
@@ -51,31 +48,18 @@ public class MVNormalDist extends ProbDistInitializeDirectly<Double1D> {
 		return this.sgInv;
 	}
 
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
-	}
-
-	public MVNormalDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
+	public MVNormalDist(Double1D Mu, Double2D Sg) throws ProbDistParmException {
+		this.Mu = Mu;
+		this.Sg = Sg;
+		setUpFromParms();
 	}
 
 	private Double1D getMu() {
-		return (Double1D) this.parms[0];
+		return Mu;
 	}
 
 	private Double2D getSg() {
-		return (Double2D) this.parms[1];
+		return Sg;
 	}	
 	
 	private int getDims() {
@@ -92,36 +76,15 @@ public class MVNormalDist extends ProbDistInitializeDirectly<Double1D> {
 
 	private MultiNormalDist getMVNormalDist() {
 		return this.mvnDist;
-	}	
-	
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(2);
-		this.parmNames.add("Mu");
-		this.parmNames.add("Sg");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(2);
-		this.parmCheck.add(null);
-		this.parmCheck.add(new ProbDistParmCheck[] { new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Double2D sg = (Double2D) o;
-				return (sg.square() && sg.numCols() == MVNormalDist.this
-						.getDims());
-			}
-
-			public String message() {
-				return "Expected square matrix";
-			}
-		} });
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(2);
-		this.parmClasses.add(Double1D.class);
-		this.parmClasses.add(Double2D.class);
 	}
 	
-	@Override
-	protected void setUpFromParms() throws ProbDistParmException {
+	public void checkParms() throws ProbDistParmException {
+		if(! (Sg.square() && Sg.numCols() == getDims())) {
+			throw new ProbDistParmException("Expected square matrix for Sg");
+		}
+	}
+	
+	private void setUpFromParms() throws ProbDistParmException {
 		if (this.getMVNormalGen() == null) {
 			Class<MRG32k3a> c = MRG32k3a.class;
 			RandomStreamFactory rsf = new BasicRandomStreamFactory(c);

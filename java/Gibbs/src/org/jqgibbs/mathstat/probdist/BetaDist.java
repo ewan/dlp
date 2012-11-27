@@ -1,49 +1,36 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Beta;
-import cern.jet.random.engine.RandomEngine;
 
-public class BetaDist extends ProbDistInitializeDirectly<Double0D> {
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<String> parmNames;
-	private List<Class<? extends Numeric<?>>> parmClasses;	
+public class BetaDist extends ProbDist<Double0D> {
+	private Double0D shape1;
+	private Double0D shape2;
 	
 	private Beta betaGen;
 
-	public BetaDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
+	public BetaDist(Double0D shape1, Double0D shape2, boolean checkParms) throws ProbDistParmException {
+		this.shape1 = shape1;
+		this.shape2 = shape2;
+		if(checkParms) {
+			checkParms();
+		}
+		setUpFromParms();
 	}
 	
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(2);
-		this.parmNames.add("shape1");
-		this.parmNames.add("shape2");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(2);
-		ProbDistParmCheck posDouble = new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Double0D i = (Double0D) o;
-				return (i.value() > 0);
-			}
-
-			public String message() {
-				return "Must be positive";
-			}
-		};
-		this.parmCheck.add(new ProbDistParmCheck[] { posDouble });
-		this.parmCheck.add(new ProbDistParmCheck[] { posDouble });
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(2);
-		this.parmClasses.add(Double0D.class);
-		this.parmClasses.add(Double0D.class);
+	public BetaDist(Double0D shape1, Double0D shape2) throws ProbDistParmException {
+		this(shape1, shape2, CHECK_PARMS);
+	}
+	
+	private void checkParms() throws ProbDistParmException {
+		if(this.shape1.value() <= 0) {
+			throw new ProbDistParmException("shape1 must be positive");
+		}
+		if(this.shape2.value() <= 0) {
+			throw new ProbDistParmException("shape2 must be positive");
+		}
 	}
 	
 	protected Beta getBetaGen() {
@@ -51,42 +38,26 @@ public class BetaDist extends ProbDistInitializeDirectly<Double0D> {
 	}
 	
 	private Double0D getShape1() {
-		return (Double0D) this.parms[0];
+		return shape1;
 	}
 	
 	private Double0D getShape2() {
-		return (Double0D) this.parms[1];
+		return shape2;
 	}		
-
-	@Override
-	protected void setUpFromParms() {
+	
+	private void setUpFromParms() {
 		if (this.getBetaGen() == null) {
-			this.betaGen = new Beta(this.getShape1().value(), this.getShape2().value(), RandomEngine
-					.makeDefault());
+			this.betaGen = new Beta(this.getShape1().value(), this.getShape2().value(), RandomEngineSelector
+					.getEngine());
 		} else {
 			this.getBetaGen().setState(this.getShape1().value(), this.getShape2().value());
 		}
-	}	
+	}
 
 	@Override
 	protected Double0D genVariate() throws ProbDistParmException {
 		assert this.initialized;
 		return new Double0D(this.getBetaGen().nextDouble());
-	}
-	
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
 	}
 
 	@Override

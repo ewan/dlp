@@ -26,7 +26,7 @@ public class GenericSampler extends Sampler {
 	
 	@Override
 	public ChainLink variateFast() {
-		RandomVar<? extends Numeric<?>> gv;
+		RandomVar<?> gv;
 		ChainLink newLink;
 		newLink = this.cloneCurrent();
 		for (String varName : newLink.getOrder()) {
@@ -49,7 +49,7 @@ public class GenericSampler extends Sampler {
 
 	@Override
 	public ChainLink variate() {
-		RandomVar<? extends Numeric<?>> gv;
+		RandomVar<?> gv;
 		ChainLink newLink;
 		newLink = this.cloneCurrent();
 		for (String varName : newLink.getOrder()) {

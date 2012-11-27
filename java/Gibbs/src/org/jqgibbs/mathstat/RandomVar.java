@@ -3,7 +3,6 @@ package org.jqgibbs.mathstat;
 import org.jqgibbs.ChainLink;
 import org.jqgibbs.SamplerData;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
 /*
@@ -27,14 +26,14 @@ import org.jqgibbs.mathstat.probdist.ProbDistParmException;
  *   
  */
 
-public class RandomVar<T extends Numeric<T>> extends Numeric<RandomVar<T>> {
+public class RandomVar<T extends Numeric> implements Numeric {
 	private String name;
 	private ProbDist<T> prior;
-	private ProbDistInitializeByChain<T> posterior;
+	private ProbDist<T> posterior;
 	private T numericValue;
 
 	public RandomVar(String name, ProbDist<T> prior,
-			ProbDistInitializeByChain<T> posterior, T t) {
+			ProbDist<T> posterior, T t) {
 		this.setName(name);
 		this.setPrior(prior);
 		this.setPosterior(posterior);
@@ -102,11 +101,11 @@ public class RandomVar<T extends Numeric<T>> extends Numeric<RandomVar<T>> {
 		return prior;
 	}
 
-	protected void setPosterior(ProbDistInitializeByChain<T> posterior) {
+	protected void setPosterior(ProbDist<T> posterior) {
 		this.posterior = posterior;
 	}
 
-	public ProbDistInitializeByChain<T> getPosterior() {
+	public ProbDist<T> getPosterior() {
 		return posterior;
 	}
 
@@ -122,14 +121,14 @@ public class RandomVar<T extends Numeric<T>> extends Numeric<RandomVar<T>> {
 		return this.cloneWith(clone);
 	}
 	
-	@Override
+	//@Override
 	public String toString() {
 		return this.getNumericValue().toString();
 //		return this.getName() + ": " + this.getNumericValue().toString();
 	}
 	
 	@SuppressWarnings("unchecked")
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(this.getClass().isAssignableFrom(o.getClass()))) {
 			return false;
@@ -141,17 +140,17 @@ public class RandomVar<T extends Numeric<T>> extends Numeric<RandomVar<T>> {
 		return this.getNumericValue().equals(((RandomVar<T>) o).getNumericValue());
 	}
 	
-	@Override
+	//@Override
 	public int hashCode() {
 		return this.getName().hashCode() + this.getNumericValue().hashCode();
 	}
 	
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		return this.getNumericValue().rowVec();
 	}
 
-	@Override
+	//@Override
 	public int length1D() {
 		return this.getNumericValue().length1D();
 	}

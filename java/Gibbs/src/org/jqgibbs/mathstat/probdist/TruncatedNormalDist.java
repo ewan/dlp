@@ -1,16 +1,12 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Normal;
 import cern.jet.random.Uniform;
-import cern.jet.random.engine.RandomEngine;
 
-public class TruncatedNormalDist extends ProbDistInitializeDirectly<Double0D> {
+public class TruncatedNormalDist extends ProbDist<Double0D> {
 
 	private final double ALPHA = 2;
 	
@@ -18,69 +14,45 @@ public class TruncatedNormalDist extends ProbDistInitializeDirectly<Double0D> {
 	private Uniform uniformGen;
 	private Normal normalGen;
 	
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<String> parmNames;
-	private List<Class<? extends Numeric<?>>> parmClasses;
+	private Double0D Mu;
+	private Double0D Sg;
+	private Double0D Min;
 
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
+	public TruncatedNormalDist(Double0D Mu, Double0D Sg, Double0D Min, boolean checkParms)
+			throws ProbDistParmException {
+		this.Mu = Mu;
+		this.Sg = Sg;
+		this.Min = Min;
+		if(checkParms) {
+			this.checkParms();
+		}
+		setUpFromParms();
 	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
+	
+	public TruncatedNormalDist(Double0D Mu, Double0D Sg, Double0D Min)
+	throws ProbDistParmException {
+		this(Mu, Sg, Min, CHECK_PARMS);
 	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
+	
+	
+	private void checkParms() throws ProbDistParmException {
+		if(this.Sg.value() < 0) {
+			throw new ProbDistParmException("Expected non-negative value for Sg");
+		}
 	}
-
-	public TruncatedNormalDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
-	}	
 
 	private Double0D getMu() {
-		return (Double0D) this.parms[0];
+		return this.Mu;
 	}	
 	
 	private Double0D getSg() {
-		return (Double0D) this.parms[1];
+		return this.Sg;
 	}
 	
 	private Double0D getMin() {
-		return (Double0D) this.parms[2];
+		return this.Min;
 	}
 	
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(3);
-		this.parmNames.add("Mu");
-		this.parmNames.add("Sg");
-		this.parmNames.add("Min");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(3);
-		this.parmCheck.add(null);
-		this.parmCheck.add(new ProbDistParmCheck[] { new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Double0D sg = (Double0D) o;
-				return (sg.value() >= 0);
-			}
-			public String message() {
-				return "Expected positive value";
-			}
-		} });
-		this.parmCheck.add(null);
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(3);
-		this.parmClasses.add(Double0D.class);
-		this.parmClasses.add(Double0D.class);
-		this.parmClasses.add(Double0D.class);
-	}
-	
-	@Override
 	protected void setUpFromParms() throws ProbDistParmException {
 		if (this.gammaDist == null) {
 			this.gammaDist = new GammaDist(new Double0D(1), new Double0D(this.ALPHA));
@@ -89,7 +61,7 @@ public class TruncatedNormalDist extends ProbDistInitializeDirectly<Double0D> {
 			this.uniformGen = new Uniform(0, 1, (int) System.currentTimeMillis());
 		}
 		if (this.normalGen == null) {
-			this.normalGen = new Normal(0, 1, RandomEngine.makeDefault());
+			this.normalGen = new Normal(0, 1, RandomEngineSelector.getEngine());
 		}
 	}
 

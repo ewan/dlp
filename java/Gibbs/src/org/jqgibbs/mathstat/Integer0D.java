@@ -2,7 +2,7 @@ package org.jqgibbs.mathstat;
 
 import java.math.BigDecimal;
 
-public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0D> {
+public class Integer0D implements Numeric {
 
 	private int i;
 	
@@ -14,7 +14,7 @@ public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0
 		return this.i;
 	}
 
-	@Override
+	//@Override
 	public Integer1D sequence() {
 		return new Integer1D(this);
 	}
@@ -27,12 +27,12 @@ public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0
 		return this.value() - o;
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Integer0D(i);
 	}
 
-	@Override
+	//@Override
 	public Integer0D cloneFromVector(Double1D v) {
 		if (v.size() == 0) {
 			return new Integer0D(0); // FIXME
@@ -40,7 +40,7 @@ public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0
 		return new Integer0D((int) v.get(0).value());
 	}
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Integer0D)) {
 			return false;
@@ -48,7 +48,7 @@ public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0
 		return this.value() == ((Integer0D) o).value();
 	}
 
-	@Override
+	//@Override
 	public int hashCode() {
 		return this.value();
 	}
@@ -69,12 +69,12 @@ public class Integer0D extends Numeric<Integer0D> implements Comparable<Integer0
 		return (new Double0D(this.value()).divide(k));
 	}
 	
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		return new Double1D((double) this.value()); 
 	}
 	
-	@Override
+	//@Override
 	public int length1D() {
 		return 1;
 	}

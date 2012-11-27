@@ -1,24 +1,37 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Integer0D;
-import org.jqgibbs.mathstat.Numeric;
+import org.jqgibbs.mathstat.Double3D;
 
 import cern.jet.stat.Gamma;
 
-public class InverseWishartDist extends ProbDistInitializeDirectly<Double2D> {
+public class InverseWishartDist extends ProbDist<Double2D> {
 
 	private WishartDist wishartDist;
-	private List<String> parmNames;
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<Class<? extends Numeric<?>>> parmClasses;
+	private Double2D Psi;
+	private Double0D K;
+	
+	public static Double3D variates(List<Double2D> postPsi, List<Double0D> postKappa) throws ProbDistParmException {
+		Double3D sequence = new Double3D();
+		sequence.add(new InverseWishartDist(postPsi.get(0), postKappa.get(0)).variate());
+		
+		for(int i = 1; i < postPsi.size(); i++) {
+			sequence.add(new InverseWishartDist(postPsi.get(i), postKappa.get(i), false).variate());
+		}
+		return sequence;
+	}
 
-	public InverseWishartDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
+	public InverseWishartDist(Double2D Psi, Double0D K, boolean checkParms) throws ProbDistParmException {
+		this.Psi = Psi;
+		this.K = K;
+		setUpFromParms(checkParms);
+	}
+	
+	public InverseWishartDist(Double2D Psi, Double0D K) throws ProbDistParmException {
+		this(Psi, K, CHECK_PARMS);
 	}
 
 	private WishartDist getWishartDist() {
@@ -32,28 +45,11 @@ public class InverseWishartDist extends ProbDistInitializeDirectly<Double2D> {
 		return W.inverse();
 	}
 
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(2);
-		this.parmNames.add("Psi");
-		this.parmNames.add("K");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(2);
-		this.parmCheck.add(null); // Don't bother testing; Wishart will do it
-		this.parmCheck.add(null); // for us
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(2);
-		this.parmClasses.add(Double2D.class);
-		this.parmClasses.add(Double0D.class);
-	}
-
-	@Override
-	protected void setUpFromParms() throws ProbDistParmException {
+	private void setUpFromParms(boolean checkParms) throws ProbDistParmException {
 		if (this.getWishartDist() == null) {
 			Double2D psiInv = this.getPsi().inverse();
 			Double0D K = this.getK();
-			this.wishartDist = new WishartDist(psiInv, K);
+			this.wishartDist = new WishartDist(psiInv, K, checkParms);
 		} else {
 			this.getWishartDist().initializeParms(this.getPsi().inverse(),
 					this.getK());
@@ -61,26 +57,11 @@ public class InverseWishartDist extends ProbDistInitializeDirectly<Double2D> {
 	}
 
 	private Double2D getPsi() {
-		return (Double2D) this.parms[0];
+		return this.Psi;
 	}
 
 	private Double0D getK() {
-		return (Double0D) this.parms[1];
-	}
-
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
+		return this.K;
 	}
 
 	@Override

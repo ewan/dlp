@@ -1,9 +1,9 @@
 package org.jqgibbs.mathstat.probdist;
 
-import org.jqgibbs.mathstat.AbstractSequence;
+//import org.jqgibbs.mathstat.AbstractSequence;
 import org.jqgibbs.mathstat.Numeric;
 
-public class IIDDist<U extends AbstractSequence<U, T>, T extends Numeric<T>>
+public class IIDDist<U extends Numeric, T extends Numeric>
 		extends ProbDist<U> {
 
 	private ProbDist<T> dist;
@@ -25,7 +25,7 @@ public class IIDDist<U extends AbstractSequence<U, T>, T extends Numeric<T>>
 		return N;
 	}
 
-	public IIDDist(Numeric<?>... parms) throws ProbDistParmException {
+	public IIDDist(Numeric... parms) throws ProbDistParmException {
 		// FIXME - this won't work because you'll still call super() and crash
 		// consider making each PD a factory for a dist like this!
 		throw new UnsupportedOperationException(
@@ -46,21 +46,5 @@ public class IIDDist<U extends AbstractSequence<U, T>, T extends Numeric<T>>
 	@Override
 	protected double getDensity(U pt) throws ProbDistParmException {
 		throw new UnsupportedOperationException("Too lazy, come back later");
-	}
-
-	@Override
-	protected void initializeParms(Numeric<?>... parms)
-			throws ProbDistParmException {
-		this.initialized = true;
-	}
-
-	@Override
-	protected void initializeParmsInitial(Numeric<?>... parms) throws ProbDistParmException {
-		this.initializeParms(parms);
-	}
-
-	@Override
-	protected void installParmChecks() {
-		return;
 	}
 }

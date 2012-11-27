@@ -3,7 +3,7 @@ package org.jqgibbs.mathstat;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public class Double0D extends Numeric<Double0D> {
+public class Double0D implements Numeric {
 	private static final int SCALE = 35;
 	private BigDecimal d;
 	private boolean dirty;
@@ -32,17 +32,17 @@ public class Double0D extends Numeric<Double0D> {
 		return d;
 	}
 
-	@Override
+	
 	public Double1D sequence() {
 		return new Double1D(this.value());
 	}
 
-	@Override
+	
 	public Object clone() throws CloneNotSupportedException {
 		return new Double0D(this.value());
 	}
 
-	@Override
+	
 	public Double0D cloneFromVector(Double1D v) {
 		if (v.size() == 0) {
 			return new Double0D(0); // FIXME
@@ -50,7 +50,7 @@ public class Double0D extends Numeric<Double0D> {
 		return new Double0D(v.get(0).value());
 	}
 
-	@Override
+	
 	public boolean equals(Object o) {
 		if (!(o instanceof Double0D)) {
 			return false;
@@ -58,7 +58,7 @@ public class Double0D extends Numeric<Double0D> {
 		return this.value() == ((Double0D) o).value();
 	}
 
-	@Override
+	
 	public int hashCode() {
 		return (int) this.value();
 	}
@@ -67,7 +67,7 @@ public class Double0D extends Numeric<Double0D> {
 		return new Double0D(this.getBigDecimal().add(new BigDecimal(d))); // FIXME
 	}
 	
-	@Override
+	
 	public String toString() {
 		return String.valueOf(this.value());
 	}
@@ -104,12 +104,12 @@ public class Double0D extends Numeric<Double0D> {
 		return new Double0D((new BigDecimal(1)).divide(this.getBigDecimal(), Double0D.SCALE, RoundingMode.HALF_EVEN));
 	}
 
-	@Override
+	
 	public Double1D rowVec() {
 		return new Double1D(this.value());
 	}
 	
-	@Override
+	
 	public int length1D() {
 		return 1;
 	}

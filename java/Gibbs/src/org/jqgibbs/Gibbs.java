@@ -39,11 +39,11 @@ public class Gibbs {
 		return ssd;
 	}
 
-	private static String dataFileName = "/Users/ewan/Work/git/dlp/java/Gibbs/spanish_mfiau_f0.txt";
-	private static int maxIter = 1000;
-	private static int burnIn = 500;
+	private static String dataFileName = "/Users/jsf/Desktop/Baggett/Gibbs/Gibbs/spanish_mfiau_f0.txt";
+	private static int maxIter = 50;//1000;
+	private static int burnIn = 10;//500;
 	private static int lag = 5;
-	private static String outFileName = "dump.out";
+	private static String outFileName = "dumpY.out";
 
 	public static void main(String[] args) throws Exception {
 		Double2D d;
@@ -62,7 +62,7 @@ public class Gibbs {
 		d = d.getColAll(1,2,3);
 		// hyperparameters
 		Double2D cov = d.cov();
-		Map<String, Numeric<? extends Numeric<?>>> hypers = new HashMap<String,Numeric<? extends Numeric<?>>>();
+		Map<String, Numeric> hypers = new HashMap<String,Numeric>();
 		hypers.put("lambda", new Double0D(22));
 		hypers.put("beta", new Double0D(1));
 		hypers.put("W", new Double2D(h,ddim));
@@ -93,7 +93,7 @@ public class Gibbs {
 		hypers.put("ga", new Double0D(1));			
 		
 		// initialization
-		Map<String, Numeric<? extends Numeric<?>>> init = new HashMap<String,Numeric<? extends Numeric<?>>>();
+		Map<String, Numeric> init = new HashMap<String,Numeric>();
 		init.put("M", new Double2D(h,ddim));
 		init.put("A", new Double3D(new Double2D(h,ddim)));
 		double[] M = new double[ddim];

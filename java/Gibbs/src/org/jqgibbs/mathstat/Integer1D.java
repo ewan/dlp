@@ -3,14 +3,13 @@ package org.jqgibbs.mathstat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-
-import org.jqgibbs.util.IndexSort;
 
 import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix1D;
 
-public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
+public class Integer1D implements Numeric, Iterable<Integer0D> {
 
 	private int[] ints;
 	private boolean dirtyWhich;
@@ -98,12 +97,12 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return this.getInts();
 	}
 
-	@Override
+	//@Override
 	public Integer0D get(int i) {
 		return new Integer0D(this.getInts()[i]);
 	}
 	
-	@Override
+	//@Override
 	public Integer1D getAll(int... dis) {
 		int[] d = this.value();
 		int[] all = new int[dis.length];
@@ -115,7 +114,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return new Integer1D(all);
 	}
 	
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Integer1D(this.getInts().clone());
 	}
@@ -128,7 +127,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 
 	 */
 
-	@Override
+	//@Override
 	public Integer1D which(Integer0D n) {
 		if (this.dirtyWhich) {
 			Integer1D active = this.items();
@@ -163,7 +162,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return new Integer0D(max);
 	}
 
-	@Override
+	//@Override
 	public Integer1D cloneFromVector(Double1D v) {
 		int[] ds = new int[this.size()];
 		for (int i=0; i<this.size(); i++) {
@@ -175,7 +174,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return new Integer1D(ds);
 	}
 	
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Integer1D)) {
 			return false;
@@ -183,7 +182,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return this.value() == ((Integer1D) o).value();
 	}
 	
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 0;
 		for (int i=0; i<this.size(); i++) {
@@ -220,7 +219,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return new Integer1D(Arrays.copyOf(intersection, n));
 	}
 
-	@Override
+	//@Override
 	public boolean remove(Object o) {
 		if (!(o instanceof Integer0D)) {
 			throw new UnsupportedOperationException();
@@ -249,7 +248,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return false;
 	}
 	
-	@Override
+	//@Override
 	public Integer0D set(int i, Integer0D t) throws IndexOutOfBoundsException {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException("Tried to set index out of range"); // FIXME
@@ -317,7 +316,7 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 	}
 	
 
-	@Override
+	//@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
@@ -340,12 +339,12 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		return this.toDouble1D().mult(o);
 	}
 	
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		return this.toDouble1D();
 	}
 	
-	@Override
+	//@Override
 	public int length1D() {
 		return this.size();
 	}
@@ -427,4 +426,24 @@ public class Integer1D extends AbstractSequence<Integer1D, Integer0D> {
 		}
 		return new Integer0D(s);
 	}	
+	
+	public Iterator<Integer0D> iterator() {
+		return new Iterator<Integer0D>() {
+			private int curr = 0;
+
+			public boolean hasNext() {
+				return (this.curr < Integer1D.this.size());
+			}
+
+			public Integer0D next() {
+				Integer0D d = Integer1D.this.get(this.curr);
+				this.curr++;
+				return d;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
 }

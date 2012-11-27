@@ -15,7 +15,7 @@ import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
 import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Integer1D;
-import org.jqgibbs.mathstat.ListSequence;
+//import org.jqgibbs.mathstat.ListSequence;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.GammaDist;
@@ -24,7 +24,7 @@ import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.NormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeDirectly;
+import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.mathstat.probdist.SeqInverseWishartDist;
@@ -37,7 +37,7 @@ public class ExGaussian extends Model {
 	class PriorYDist extends ProbDistInitializeByChain<Double1D> {
 		private GammaDist gammaDist;
 
-		public PriorYDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PriorYDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -56,10 +56,10 @@ public class ExGaussian extends Model {
 			this.chainParmCheck.add(null);
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
@@ -98,7 +98,7 @@ public class ExGaussian extends Model {
 		private Double0D postS;
 		private TruncatedNormalDist truncatedNormalDist;
 
-		public PostYDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostYDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -145,12 +145,12 @@ public class ExGaussian extends Model {
 			this.chainParmCheck.add(null);
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					3);
 			this.chainParmClasses.add(Double0D.class);
 			this.chainParmClasses.add(Double0D.class);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
@@ -191,7 +191,7 @@ public class ExGaussian extends Model {
 		private Double0D postTheta;
 		private GammaDist gammaDist;
 
-		public PostLambdaDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostLambdaDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -249,10 +249,10 @@ public class ExGaussian extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Double1D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double0D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -278,7 +278,7 @@ public class ExGaussian extends Model {
 	class PriorMuDist extends ProbDistInitializeByChain<Double0D> {
 		private NormalDist normalDist;
 
-		public PriorMuDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PriorMuDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -322,11 +322,11 @@ public class ExGaussian extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Double1D.class);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double0D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -353,7 +353,7 @@ public class ExGaussian extends Model {
 		private Double0D postS;
 		private NormalDist normalDist;
 
-		public PostMuDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostMuDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -417,11 +417,11 @@ public class ExGaussian extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Double1D.class);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double0D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -456,7 +456,7 @@ public class ExGaussian extends Model {
 		private Double0D postTheta;
 		private GammaDist gammaDist;
 
-		public PostSigmaDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostSigmaDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -529,11 +529,11 @@ public class ExGaussian extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.chainParmClasses.add(Double1D.class);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					4);
 			this.fixedParmClasses.add(Double0D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -569,12 +569,12 @@ public class ExGaussian extends Model {
 		super();
 	}
 
-	public ExGaussian(Map<String, Numeric<? extends Numeric<?>>> hypers,
-			Map<String, Numeric<? extends Numeric<?>>> init)
+	public ExGaussian(Map<String, Numeric> hypers,
+			Map<String, Numeric> init)
 			throws ProbDistParmException {
 		super(hypers, 1);
 		// Set up parameters
-		this.params = new HashMap<String, RandomVar<? extends Numeric<?>>>();
+		this.params = new HashMap<String, RandomVar<? extends Numeric>>();
 		// lambda
 		ProbDist<Double0D> priorLambda = new GammaDist((Double0D) this
 				.getHyper("k_l"), (Double0D) this.getHyper("th_l"));

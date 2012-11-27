@@ -1,23 +1,19 @@
 package org.jqgibbs.mathstat.probdist;
 
-import org.jqgibbs.mathstat.Integer0D;
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double1D;
+import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Empirical;
 import cern.jet.random.EmpiricalWalker;
-import cern.jet.random.engine.RandomEngine;
 
 public abstract class AbstractCategoricalDist extends
-		ProbDistInitializeDirectly<Integer0D> {
+		ProbDist<Integer0D> {
 
 	private EmpiricalWalker empiricalGen;
-	//private Empirical empiricalGen;
-
-	public AbstractCategoricalDist(Numeric<?>... parms)
-			throws ProbDistParmException {
-		super(parms);
-	}
+	protected Integer0D K;
+	protected Double1D P;
 
 	protected void setEmpiricalGen(EmpiricalWalker empiricalGen) {
 		this.empiricalGen = empiricalGen;
@@ -27,9 +23,13 @@ public abstract class AbstractCategoricalDist extends
 		return empiricalGen;
 	}
 
-	protected abstract Integer0D getK();
+	protected Integer0D getK() {
+		return this.K;
+	}
 
-	protected abstract Double1D getP();
+	protected Double1D getP() {
+		return this.P;
+	}
 
 	protected void setUpEmpiricalGen() {
 		// *** FIXME ***
@@ -40,7 +40,7 @@ public abstract class AbstractCategoricalDist extends
 		// *** FIXME***
 		if (this.getEmpiricalGen() == null) {
 			this.setEmpiricalGen(new EmpiricalWalker(p.value(),
-					Empirical.NO_INTERPOLATION, RandomEngine.makeDefault()));
+					Empirical.NO_INTERPOLATION, RandomEngineSelector.getEngine()));
 		} else {
 			assert this.initialized == true;
 			this.getEmpiricalGen().setState(p.value(),

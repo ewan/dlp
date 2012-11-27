@@ -1,53 +1,58 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Numeric;
+import org.jqgibbs.mathstat.Double3D;
 
-import umontreal.iro.lecuyer.probdistmulti.MultiNormalDist;
-import umontreal.iro.lecuyer.randvar.NormalGen;
-import umontreal.iro.lecuyer.randvarmulti.MultinormalCholeskyGen;
-import umontreal.iro.lecuyer.rng.BasicRandomStreamFactory;
-import umontreal.iro.lecuyer.rng.MRG32k3a;
-import umontreal.iro.lecuyer.rng.RandomStream;
-import umontreal.iro.lecuyer.rng.RandomStreamFactory;
-
-public class MatrixNormalDist extends ProbDistInitializeDirectly<Double2D> {
-
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<String> parmNames;
-	private List<Class<? extends Numeric<?>>> parmClasses;	
+public class MatrixNormalDist extends ProbDist<Double2D> {
 	
 	private MVNormalDist mvnDist;
+	private Double2D M;
+	private Double2D Sg;
+	private Double2D Omega;
 	
-	public MatrixNormalDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
+	public static Double3D variates(List<Double2D> RepM, Double3D ActiveSg, List<Double2D> Omega) throws ProbDistParmException {
+		boolean singleOmega = Omega.size() < RepM.size(); // using constant Omega across entries
+		Double3D sequence = new Double3D();
+		sequence.add(new MatrixNormalDist(RepM.get(0), ActiveSg.get(0), Omega.get(0)).variate());
+		for(int i = 1; i < RepM.size(); i++) {
+			sequence.add(new MatrixNormalDist(RepM.get(i), ActiveSg.get(i), Omega.get(singleOmega ? 0 : i), false).variate());
+		}
+		return sequence;
+	}
+	
+	public MatrixNormalDist(Double2D M, Double2D Sg, Double2D Omega, boolean checkParms) throws ProbDistParmException {
+		this.M = M;
+		if(this.getM() == null) {
+			System.out.println("Why would you do that to me?");
+		}
+		this.Sg = Sg;
+		this.Omega = Omega;
+		if(checkParms) {
+			checkParms();
+		}
+	}
+	
+	public MatrixNormalDist(Double2D M, Double2D Sg, Double2D Omega) throws ProbDistParmException {
+		this(M, Sg, Omega, CHECK_PARMS);
+	}
+	
+	public MatrixNormalDist() throws ProbDistParmException {
+		//this(new Double2D(), new Double2D(), new Double2D());
+		// Empty (fix?)
 	}
 	
 	private MVNormalDist getMVNormalDist() {
 		return this.mvnDist;
 	}
 	
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
-	}	
-	
 	private Double2D getM() {
-		return (Double2D) this.parms[0];
+		if (this.M == null) {
+			System.out.println("how did that happen?");
+		}
+		return this.M;
 	}
 
 	private Double1D getVecM() {
@@ -63,61 +68,24 @@ public class MatrixNormalDist extends ProbDistInitializeDirectly<Double2D> {
 	}
 	
 	private Double2D getSg() {
-		return (Double2D) this.parms[1];
+		return this.Sg;
 	}
 	
 	private Double2D getOmega() {
-		return (Double2D) this.parms[2];
+		return this.Omega;
 	}
 	
 	private Double2D getKronSg() {
 		return this.getSg().kron(this.getOmega());
 	}
 	
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(3);
-		this.parmNames.add("M");
-		this.parmNames.add("Sg");
-		this.parmNames.add("Omega");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(3);
-		this.parmCheck.add(null);
-		this.parmCheck.add(new ProbDistParmCheck[] {
-			new ProbDistParmCheck() {
-				public boolean test(Numeric<?> o) {
-					Double2D s = (Double2D) o;
-					return (s.square() && s.numCols() == MatrixNormalDist.this.getDims());
-				}
-
-				public String message() {
-					return "Expected square matrix";
-				}
-			}
-		});
-		this.parmCheck.add(new ProbDistParmCheck[] {
-			new ProbDistParmCheck() {
-				public boolean test(Numeric<?> o) {
-					Double2D s = (Double2D) o;
-					return (s.square() && s.numCols() == MatrixNormalDist.this.getH());
-				}
-
-				public String message() {
-					return "Expected square matrix";
-				}
-			}
-		});		
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(3);
-		this.parmClasses.add(Double2D.class);
-		this.parmClasses.add(Double2D.class);
-		this.parmClasses.add(Double2D.class);
-	}	
-
-	@Override
-	protected void setUpFromParms() throws ProbDistParmException {
-		return;
+	public void checkParms() throws ProbDistParmException {
+		if(!(getSg().square() && getSg().numCols() == MatrixNormalDist.this.getDims())) {
+			throw new ProbDistParmException("Expected square matrix for Sg");
+		}
+		if(!(getOmega().square() && getOmega().numCols() == MatrixNormalDist.this.getH())) {
+			throw new ProbDistParmException("Expected square matrix for Omega");
+		}
 	}
 	
 	@Override

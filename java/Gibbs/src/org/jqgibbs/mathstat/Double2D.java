@@ -1,5 +1,6 @@
 package org.jqgibbs.mathstat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -10,9 +11,8 @@ import cern.colt.matrix.impl.DenseDoubleMatrix2D;
 import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 import cern.colt.matrix.linalg.CholeskyDecomposition;
 import cern.colt.matrix.linalg.SingularValueDecomposition;
-import cern.jet.math.Functions;
 
-public class Double2D extends AbstractSequence<Double2D, Double1D> {
+public class Double2D implements Numeric, Iterable<Double1D> {
 	public static final double MAX_MATRIX_COND_NUM = 1e16;
 	
 	private DoubleMatrix2D dm;
@@ -42,7 +42,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 	}
 
 	public Double2D(int m, int n, List<int[]> indices,
-			AbstractSequence<?, Double0D> values) {
+			Double1D values) {
 		if (!(indices.size() == values.size())) {
 			throw new IllegalArgumentException(
 					"Length of indices was different from "
@@ -95,7 +95,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return this.dm;
 	}
 
-	@Override
+	//@Override
 	public Double3D sequence() {
 		return new Double3D(this);
 	}
@@ -256,7 +256,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return this.getDm().copy();
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Double2D(this.getDm().copy());
 	}
@@ -277,7 +277,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return new Double2D(AlgebraStatic.minusStatic(this.getDm(), o.getDm()));
 	}
 
-	@Override
+	//@Override
 	public Double2D getAll(int... dis) {
 		double[][] d = this.value();
 		double[][] all = new double[dis.length][this.numCols()];
@@ -306,7 +306,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return new Double1D(sum);
 	}
 
-	@Override
+	//@Override
 	public Double2D cloneFromVector(Double1D v) {
 		double[][] ds = new double[this.numRows()][this.numCols()];
 		int k = 0;
@@ -324,7 +324,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return new Double2D(ds);
 	}
 
-	@Override
+	//@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
@@ -337,7 +337,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return s;
 	}
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Double2D)) {
 			return false;
@@ -345,7 +345,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return this.value() == ((Double2D) o).value();
 	}
 
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 0;
 		for (int i = 0; i < this.size(); i++) {
@@ -354,7 +354,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return h;
 	}
 
-	@Override
+	//@Override
 	public Double1D set(int i, Double1D t) {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException(
@@ -483,7 +483,7 @@ public class Double2D extends AbstractSequence<Double2D, Double1D> {
 		return new Integer2D(ints);
 	}
 
-	@Override
+	//@Override
 	public int length1D() {
 		return this.numCols() * this.numRows();
 	}

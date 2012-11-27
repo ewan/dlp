@@ -10,29 +10,29 @@ import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
 public abstract class Model {
-	protected Map<String, RandomVar<? extends Numeric<?>>> params;
-	protected Map<String, Numeric<? extends Numeric<?>>> hypers;
+	protected Map<String, RandomVar<? extends Numeric>> params;
+	protected Map<String, Numeric> hypers;
 	protected int dims;
 
 	public Model() {
 		super();
 	}
 	
-	public Model(Map<String, Numeric<? extends Numeric<?>>> hypers, int dims) throws ProbDistParmException {
+	public Model(Map<String, Numeric> hypers, int dims) throws ProbDistParmException {
 		this.hypers = hypers;
 		this.dims = dims;
 	}
 	
-	public RandomVar<? extends Numeric<?>> getParam(String paramName) {
+	public RandomVar<? extends Numeric> getParam(String paramName) {
 		return this.params.get(paramName);
 	}
 	
-	public RandomVar<? extends Numeric<?>> getParam(String paramName, Double1D v) {
-		RandomVar<? extends Numeric<?>> rv = this.params.get(paramName); // FIXME - check!
+	public RandomVar<? extends Numeric> getParam(String paramName, Double1D v) {
+		RandomVar<? extends Numeric> rv = this.params.get(paramName); // FIXME - check!
 		return rv.cloneFromVector(v);
 	}
 
-	public Numeric<? extends Numeric<?>> getHyper(String hyperName) {
+	public Numeric getHyper(String hyperName) {
 		return this.hypers.get(hyperName);
 	}
 

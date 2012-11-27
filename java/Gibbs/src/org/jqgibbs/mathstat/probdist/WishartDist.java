@@ -1,71 +1,53 @@
 package org.jqgibbs.mathstat.probdist;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jqgibbs.mathstat.AbstractSequence;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Integer0D;
-import org.jqgibbs.mathstat.Numeric;
 
-import cern.colt.matrix.linalg.LUDecomposition;
-
-public class WishartDist extends ProbDistInitializeDirectly<Double2D> {
+public class WishartDist extends ProbDist<Double2D> {
 
 	private static Double0D D0 = new Double0D(0);
 	private static Double0D D1 = new Double0D(1);
-
-	private List<String> parmNames;
-	private List<ProbDistParmCheck[]> parmCheck;
-	private List<Class<? extends Numeric<?>>> parmClasses;
+	
+	private Double2D Psi;
+	private Double0D K;
 
 	private GammaDist[] gammaDists;
 	private NormalDist normalDist;
-
-	public WishartDist(Numeric<?>... parms) throws ProbDistParmException {
-		super(parms);
+	
+	public WishartDist(Double2D Psi, Double0D K, boolean checkParms) throws ProbDistParmException {
+		this.Psi = Psi;
+		this.K = K;
+		if(checkParms) {
+			checkParms();
+		}
+		this.setUpFromParms();
 	}
-
-	@Override
-	protected void installParmChecks() {
-		// Names
-		this.parmNames = new ArrayList<String>(2);
-		this.parmNames.add("Psi");
-		this.parmNames.add("K");
-		// Checks
-		this.parmCheck = new ArrayList<ProbDistParmCheck[]>(2);
-		this.parmCheck.add(new ProbDistParmCheck[] { new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Double2D psi = (Double2D) o;
-				return (psi.square());
-			}
-
-			public String message() {
-				return "Expected square matrix";
-			}
-		} });
-		this.parmCheck.add(new ProbDistParmCheck[] { new ProbDistParmCheck() {
-			public boolean test(Numeric<?> o) {
-				Double0D K = (Double0D) o;
-				return (K.value() > ((double) WishartDist.this.getDims() - 1.0));
-			}
-
-			public String message() {
-				return "Must be at > number of dimensions - 1 ("
-						+ String.valueOf(WishartDist.this.getDims() - 1) + ")";
-			}
-		} });
-		// Classes
-		this.parmClasses = new ArrayList<Class<? extends Numeric<?>>>(2);
-		this.parmClasses.add(Double2D.class);
-		this.parmClasses.add(Double0D.class);
+	
+	public WishartDist(Double2D Psi, Double0D K) throws ProbDistParmException {
+		this(Psi, K, CHECK_PARMS);
 	}
-
-	@Override
-	protected void setUpFromParms() {
+	
+	public void initializeParms(Double2D Psi, Double0D K) {
+		this.Psi = Psi;
+		this.K = K;
+	}
+	
+	public void checkParms() throws ProbDistParmException {
+		if(!Psi.square()) {
+			throw new ProbDistParmException("Expected square matrix for Psi");
+		}
+		if(K.value() <= ((double) getDims() - 1.0)) {
+			String error = "K: Must be at > number of dimensions - 1 ("
+				+ String.valueOf(WishartDist.this.getDims() - 1) + ")";
+			throw new ProbDistParmException(error);
+		}
+	}
+	
+	private void setUpFromParms() {
 		try {
 			if (this.getGammaDists() == null) {
 				this.gammaDists = new GammaDist[this.getDims()];
@@ -89,11 +71,11 @@ public class WishartDist extends ProbDistInitializeDirectly<Double2D> {
 	}
 
 	private Double2D getPsi() {
-		return (Double2D) this.parms[0];
+		return Psi;
 	}
 
 	private Double0D getK() {
-		return (Double0D) this.parms[1];
+		return K;
 	}
 
 	private int getDims() {
@@ -160,22 +142,7 @@ public class WishartDist extends ProbDistInitializeDirectly<Double2D> {
 		}
 		return A;
 	}
-
-	@Override
-	protected List<ProbDistParmCheck[]> getParmCheck() {
-		return this.parmCheck;
-	}
-
-	@Override
-	protected List<Class<? extends Numeric<?>>> getParmClasses() {
-		return this.parmClasses;
-	}
-
-	@Override
-	protected List<String> getParmNames() {
-		return this.parmNames;
-	}
-
+	
 	@Override
 	protected double getDensity(Double2D pt) throws ProbDistParmException {
 		throw new UnsupportedOperationException("Too lazy, come back later");

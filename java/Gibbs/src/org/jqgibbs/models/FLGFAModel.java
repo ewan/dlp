@@ -20,7 +20,7 @@ import org.jqgibbs.mathstat.Double3D;
 import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Integer2D;
-import org.jqgibbs.mathstat.ListSequence;
+import org.jqgibbs.mathstat.List;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.UndirectedGraph;
@@ -43,16 +43,16 @@ public class FLGFAModel extends Model {
 	class PriorOmegaDist extends ProbDistInitializeByChain<Double3D> {
 		private SeqInverseWishartDist iwDists; // FIXME - Shouldn't this use the
 		// IID?
-		private ListSequence<Double2D> repPhi;
-		private ListSequence<Double0D> repLambda;
+		private List<Double2D> repPhi;
+		private List<Double0D> repLambda;
 
-		public PriorOmegaDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PriorOmegaDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
-		private ListSequence<Double2D> getRepPhi() {
+		private List<Double2D> getRepPhi() {
 			if (this.repPhi == null) {
-				this.repPhi = new ListSequence<Double2D>();
+				this.repPhi = new ArrayList<Double2D>();
 				Integer1D active = this.getZ().items();
 				for (int i = 0; i < active.size(); i++) {
 					this.repPhi.add(this.getPhi());
@@ -61,9 +61,9 @@ public class FLGFAModel extends Model {
 			return this.repPhi;
 		}
 
-		private ListSequence<Double0D> getRepLambda() {
+		private List<Double0D> getRepLambda() {
 			if (this.repLambda == null) {
-				this.repLambda = new ListSequence<Double0D>();
+				this.repLambda = new List<Double0D>();
 				Integer1D active = this.getZ().items();
 				for (int i = 0; i < active.size(); i++) {
 					this.repLambda.add(this.getLambda());
@@ -110,10 +110,10 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Integer1D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -136,27 +136,27 @@ public class FLGFAModel extends Model {
 	}
 
 	class PostOmegaDist extends ProbDistInitializeByChain<Double3D> {
-		private ListSequence<Double2D> postPhis;
-		private ListSequence<Double0D> postLambdas;
+		private List<Double2D> postPhis;
+		private List<Double0D> postLambdas;
 		private SeqInverseWishartDist iwDists;
 
-		public PostOmegaDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostOmegaDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
-		protected ListSequence<Double2D> getPostPhis() {
+		protected List<Double2D> getPostPhis() {
 			return this.postPhis;
 		}
 
-		protected ListSequence<Double0D> getPostLambdas() {
+		protected List<Double0D> getPostLambdas() {
 			return this.postLambdas;
 		}
 
-		protected void setPostPhis(ListSequence<Double2D> postPhis) {
+		protected void setPostPhis(List<Double2D> postPhis) {
 			this.postPhis = postPhis;
 		}
 
-		protected void setPostLambdas(ListSequence<Double0D> postLambdas) {
+		protected void setPostLambdas(List<Double0D> postLambdas) {
 			this.postLambdas = postLambdas;
 		}
 
@@ -216,13 +216,13 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					4);
 			this.chainParmClasses.add(Integer1D.class);
 			this.chainParmClasses.add(Double2D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -230,8 +230,8 @@ public class FLGFAModel extends Model {
 
 		@Override
 		protected void setUpFromChainParms() {
-			this.setPostPhis(new ListSequence<Double2D>());
-			this.setPostLambdas(new ListSequence<Double0D>());
+			this.setPostPhis(new List<Double2D>());
+			this.setPostLambdas(new List<Double0D>());
 			Integer1D active = this.getZ().items();
 			int d = FLGFAModel.this.dims;
 			for (Integer0D k : active) {
@@ -268,16 +268,16 @@ public class FLGFAModel extends Model {
 	class PriorSgDist extends ProbDistInitializeByChain<Double3D> {
 		private SeqInverseWishartDist iwDists; // FIXME - Shouldn't this use the
 		// IID?
-		private ListSequence<Double2D> repPsi;
-		private ListSequence<Double0D> repKappa;
+		private List<Double2D> repPsi;
+		private List<Double0D> repKappa;
 
-		public PriorSgDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PriorSgDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
-		private ListSequence<Double2D> getRepPsi() {
+		private List<Double2D> getRepPsi() {
 			if (this.repPsi == null) {
-				this.repPsi = new ListSequence<Double2D>();
+				this.repPsi = new List<Double2D>();
 				Integer1D active = this.getZ().items();
 				for (int i = 0; i < active.size(); i++) {
 					this.repPsi.add(this.getPsi());
@@ -286,9 +286,9 @@ public class FLGFAModel extends Model {
 			return this.repPsi;
 		}
 
-		private ListSequence<Double0D> getRepKappa() {
+		private List<Double0D> getRepKappa() {
 			if (this.repKappa == null) {
-				this.repKappa = new ListSequence<Double0D>();
+				this.repKappa = new List<Double0D>();
 				Integer1D active = this.getZ().items();
 				for (int i = 0; i < active.size(); i++) {
 					this.repKappa.add(this.getKappa());
@@ -335,10 +335,10 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Integer1D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -361,27 +361,27 @@ public class FLGFAModel extends Model {
 	}
 
 	class PostSgDist extends ProbDistInitializeByChain<Double3D> {
-		private ListSequence<Double2D> postPsi;
-		private ListSequence<Double0D> postKappa;
+		private List<Double2D> postPsi;
+		private List<Double0D> postKappa;
 		private SeqInverseWishartDist iwDists;
 
-		public PostSgDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostSgDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
-		protected ListSequence<Double2D> getPostPsi() {
+		protected List<Double2D> getPostPsi() {
 			return this.postPsi;
 		}
 
-		protected ListSequence<Double0D> getPostKappa() {
+		protected List<Double0D> getPostKappa() {
 			return this.postKappa;
 		}
 
-		protected void setPostPsi(ListSequence<Double2D> postPsi) {
+		protected void setPostPsi(List<Double2D> postPsi) {
 			this.postPsi = postPsi;
 		}
 
-		protected void setPostKappa(ListSequence<Double0D> postKappa) {
+		protected void setPostKappa(List<Double0D> postKappa) {
 			this.postKappa = postKappa;
 		}
 
@@ -447,14 +447,14 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					5);
 			this.chainParmClasses.add(Integer1D.class);
 			this.chainParmClasses.add(Integer2D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double2D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -462,8 +462,8 @@ public class FLGFAModel extends Model {
 
 		@Override
 		protected void setUpFromChainParms() {
-			this.setPostPsi(new ListSequence<Double2D>());
-			this.setPostKappa(new ListSequence<Double0D>());
+			this.setPostPsi(new List<Double2D>());
+			this.setPostKappa(new List<Double0D>());
 			Integer1D active = this.getZ().items();
 			int h = this.getA().size();
 			for (Integer0D k : active) {
@@ -513,7 +513,7 @@ public class FLGFAModel extends Model {
 	class PriorADist extends ProbDistInitializeByChain<Double3D> {
 		private SeqMatrixNormalDist matnDists;
 
-		public PriorADist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PriorADist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -578,14 +578,14 @@ public class FLGFAModel extends Model {
 			this.chainParmCheck.add(null);
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					5);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Integer1D.class);
 			this.chainParmClasses.add(Integer2D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
@@ -606,12 +606,12 @@ public class FLGFAModel extends Model {
 	}
 
 	class PostADist extends ProbDistInitializeByChain<Double3D> {
-		private ListSequence<Double2D> postMs;
-		private ListSequence<Double2D> postSgs;
-		private ListSequence<Double2D> postOmegas;
+		private List<Double2D> postMs;
+		private List<Double2D> postSgs;
+		private List<Double2D> postOmegas;
 		private SeqMatrixNormalDist matnDists;
 
-		public PostADist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostADist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -622,7 +622,7 @@ public class FLGFAModel extends Model {
 				this.matnDists = new SeqMatrixNormalDist(this.getPostM(),
 						sgActive, this.getPostOmega());
 				// FIXME - Will this work if all arguments are not
-				// ListSequences?
+				// Lists?
 				return this.matnDists.variate();
 			} else {
 				return this.matnDists.variate(this.getPostM(), sgActive, this
@@ -630,19 +630,19 @@ public class FLGFAModel extends Model {
 			}
 		}
 
-		protected ListSequence<Double2D> getPostM() {
+		protected List<Double2D> getPostM() {
 			return this.postMs;
 		}
 
-		protected ListSequence<Double2D> getPostOmega() {
+		protected List<Double2D> getPostOmega() {
 			return this.postOmegas;
 		}
 
-		protected void setPostM(ListSequence<Double2D> postMs) {
+		protected void setPostM(List<Double2D> postMs) {
 			this.postMs = postMs;
 		}
 
-		protected void setPostOmega(ListSequence<Double2D> postOmegas) {
+		protected void setPostOmega(List<Double2D> postOmegas) {
 			this.postOmegas = postOmegas;
 		}
 
@@ -685,21 +685,21 @@ public class FLGFAModel extends Model {
 			this.chainParmCheck.add(null);
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					5);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double2D.class);
 			this.chainParmClasses.add(Integer1D.class);
 			this.chainParmClasses.add(Integer2D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
 		@Override
 		protected void setUpFromChainParms() {
-			this.setPostOmega(new ListSequence<Double2D>());
-			this.setPostM(new ListSequence<Double2D>());
+			this.setPostOmega(new List<Double2D>());
+			this.setPostM(new List<Double2D>());
 			Integer1D active = this.getZ().items();
 			for (Integer0D k : active) {
 				Integer1D zK = this.getZ().which(k);
@@ -765,7 +765,7 @@ public class FLGFAModel extends Model {
 
 	// Neal's (1998) Algorithm 8
 	class CPDist extends ProbDistInitializeByChain<Integer1D> {
-		public CPDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public CPDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -922,7 +922,7 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					7);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
@@ -931,7 +931,7 @@ public class FLGFAModel extends Model {
 			this.chainParmClasses.add(Integer2D.class);
 			this.chainParmClasses.add(Double2D.class);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					4);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -1042,7 +1042,7 @@ public class FLGFAModel extends Model {
 		protected Double1D postVecMu;
 		protected Double2D postKronSg;
 
-		public PostMDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostMDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -1105,14 +1105,14 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					5);
 			this.chainParmClasses.add(Integer1D.class);
 			this.chainParmClasses.add(Integer2D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
 			this.chainParmClasses.add(Double3D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double2D.class);
 			this.fixedParmClasses.add(Double2D.class);
@@ -1185,7 +1185,7 @@ public class FLGFAModel extends Model {
 		private Double0D postXA;
 		private Double0D postXB;
 
-		public PostXDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostXDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -1200,10 +1200,10 @@ public class FLGFAModel extends Model {
 			this.chainParmCheck.add(null);
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Double0D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
@@ -1261,7 +1261,7 @@ public class FLGFAModel extends Model {
 		private Double0D postAlB;
 		private Double1D postMix;
 
-		public PostAlDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostAlDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -1282,11 +1282,11 @@ public class FLGFAModel extends Model {
 			this.fixedParmCheck.add(null);
 			this.fixedParmCheck.add(null);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.chainParmClasses.add(Double0D.class);
 			this.chainParmClasses.add(Integer1D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					2);
 			this.fixedParmClasses.add(Double0D.class);
 			this.fixedParmClasses.add(Double0D.class);
@@ -1389,7 +1389,7 @@ public class FLGFAModel extends Model {
 	}
 
 	class PostBDist extends ProbDistInitializeByChain<Integer2D> {
-		public PostBDist(Numeric<?>... fixed) throws ProbDistParmException {
+		public PostBDist(Numeric... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
 
@@ -1408,10 +1408,10 @@ public class FLGFAModel extends Model {
 			this.chainParmCheck.add(null); // FIXME
 			this.fixedParmCheck = new ArrayList<ProbDistParmCheck[]>(0);
 			// Classes
-			this.chainParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.chainParmClasses = new ArrayList<Class<? extends Numeric>>(
 					1);
 			this.chainParmClasses.add(Integer2D.class);
-			this.fixedParmClasses = new ArrayList<Class<? extends Numeric<?>>>(
+			this.fixedParmClasses = new ArrayList<Class<? extends Numeric>>(
 					0);
 		}
 
@@ -1523,7 +1523,7 @@ public class FLGFAModel extends Model {
 	// int nPairs = n * n - n * (n + 1) / 2;
 	// Integer2D pairsSeq = new Integer2D(c.size(), nPairs);
 	// // Set up matrix for B
-	// ListSequence<Integer2D> BSeq = new ListSequence<Integer2D>();
+	// List<Integer2D> BSeq = new List<Integer2D>();
 	// // For each link in the chain,
 	// for (int i = 0; i < c.size(); i++) {
 	// // Save pairs
@@ -1602,8 +1602,8 @@ public class FLGFAModel extends Model {
 	// RandomVar<Double0D> rvAl = (RandomVar<Double0D>) last.get("al");
 	// // Sample new model parameters using current prior, observing Z and B
 	// Map<String, AbstractSequence<? extends AbstractSequence<?, ?>, ? extends
-	// Numeric<?>>> vars = new HashMap<String, AbstractSequence<? extends
-	// AbstractSequence<?, ?>, ? extends Numeric<?>>>();
+	// Numeric>> vars = new HashMap<String, AbstractSequence<? extends
+	// AbstractSequence<?, ?>, ? extends Numeric>>();
 	// vars.put("A", AInit.sequence());
 	// vars.put("Sg", SgInit.sequence());
 	// vars.put("Omega", OmegaInit.sequence());
@@ -1618,13 +1618,13 @@ public class FLGFAModel extends Model {
 	// next.get("Sg").updatePosteriorFast(next, d);
 	// next.get("Omega").updatePosteriorFast(next, d);
 	// if (i >= c.size()) {
-	// ((ListSequence<Double3D>) vars.get("A"))
+	// ((List<Double3D>) vars.get("A"))
 	// .add((Double3D) next.get("A").getNumericValue()
 	// .clone());
-	// ((ListSequence<Double3D>) vars.get("Sg"))
+	// ((List<Double3D>) vars.get("Sg"))
 	// .add((Double3D) next.get("Sg").getNumericValue()
 	// .clone());
-	// ((ListSequence<Double3D>) vars.get("Omega"))
+	// ((List<Double3D>) vars.get("Omega"))
 	// .add((Double3D) next.get("Omega").getNumericValue()
 	// .clone());
 	// }
@@ -1662,13 +1662,13 @@ public class FLGFAModel extends Model {
 		super();
 	}
 
-	public FLGFAModel(Map<String, Numeric<? extends Numeric<?>>> hypers,
-			Map<String, Numeric<? extends Numeric<?>>> init, int dims)
+	public FLGFAModel(Map<String, Numeric> hypers,
+			Map<String, Numeric> init, int dims)
 			throws ProbDistParmException {
 		super(hypers, dims);
 		
 		// Set up parameters
-		this.params = new HashMap<String, RandomVar<? extends Numeric<?>>>();
+		this.params = new HashMap<String, RandomVar<? extends Numeric>>();
 
 		
 		// Omega

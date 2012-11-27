@@ -3,13 +3,14 @@ package org.jqgibbs.mathstat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import cern.colt.matrix.DoubleMatrix1D;
 import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix1D;
 
-public class Double1D extends AbstractSequence<Double1D, Double0D> {
+public class Double1D implements Numeric, Iterable<Double0D> {
 
 	private DoubleMatrix1D dm;
 	
@@ -49,12 +50,12 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return this.dm;
 	}
 
-	@Override
+	//@Override
 	public Double2D sequence() {
 		return new Double2D(this);
 	}
 
-	@Override
+	//@Override
 	public Double0D set(int i, Double0D t) throws IndexOutOfBoundsException {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException("Tried to set index out of range"); // FIXME
@@ -67,7 +68,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return t;
 	}	
 	
-	@Override
+	//@Override
 	public boolean add(Double0D d0D) {
 		double[] ds = Arrays.copyOf(this.getDm().toArray(), this.size()+1);
 		if (d0D == null) {
@@ -78,7 +79,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return true;
 	}
 
-	@Override
+	//@Override
 	public boolean addAll(Collection<? extends Double0D> c) {
 		double[] ds = Arrays.copyOf(this.getDm().toArray(),
 				this.size()+c.size());
@@ -94,7 +95,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return true;
 	}
 
-	@Override
+	//@Override
 	public boolean contains(Object o) {
 		double d;
 		if (o == null) {
@@ -114,7 +115,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return false;
 	}
 
-	@Override
+	//@Override
 	public int size() {
 		return this.getDm().size();
 	}
@@ -127,12 +128,12 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return this.getDm();
 	}
 
-	@Override
+	//@Override
 	public Double0D get(int i) {
 		return new Double0D(this.getDm().get(i));
 	}
 
-	@Override
+	//@Override
 	public Object clone() throws CloneNotSupportedException {
 		return new Double1D(this.getDm().copy());
 	}
@@ -150,7 +151,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return true;
 	}
 
-	@Override
+	//@Override
 	public Double1D getAll(int... dis) {
 		double[] d = this.value();
 		double[] all = new double[dis.length];
@@ -175,7 +176,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return new Integer1D(is);
 	}
 
-	@Override
+	//@Override
 	public Double1D cloneFromVector(Double1D v) {
 		double[] ds = new double[this.size()];
 		for (int i=0; i<this.size(); i++) {
@@ -187,7 +188,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return new Double1D(ds);
 	}
 	
-	@Override
+	//@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
@@ -199,7 +200,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 	}	
 	
 
-	@Override
+	//@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Double1D)) {
 			return false;
@@ -207,7 +208,7 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return this.value() == ((Double1D) o).value();
 	}
 	
-	@Override
+	//@Override
 	public int hashCode() {
 		int h = 0;
 		for (int i=0; i<this.size(); i++) {
@@ -268,12 +269,32 @@ public class Double1D extends AbstractSequence<Double1D, Double0D> {
 		return new Double2D(AlgebraStatic.unvec(this.getDm(), h));
 	}
 
-	@Override
+	//@Override
 	public Double1D rowVec() {
 		return this;
 	}
 	
-	@Override
+	public Iterator<Double0D> iterator() {
+		return new Iterator<Double0D>() {
+			private int curr = 0;
+
+			public boolean hasNext() {
+				return (this.curr < Double1D.this.length1D());
+			}
+
+			public Double0D next() {
+				Double0D d = Double1D.this.rowVec().get(this.curr);
+				this.curr++;
+				return d;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
+	
+	//@Override
 	public int length1D() {
 		return this.size();
 	}
