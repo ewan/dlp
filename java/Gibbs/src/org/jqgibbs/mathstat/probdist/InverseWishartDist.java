@@ -5,6 +5,7 @@ import java.util.List;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
+import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.stat.Gamma;
 
@@ -36,6 +37,19 @@ public class InverseWishartDist extends ProbDist<Double2D> {
 
 	private WishartDist getWishartDist() {
 		return this.wishartDist;
+	}
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		Double2D Psi = (Double2D)parms[0];
+		Double0D K = (Double0D)parms[1];
+		this.Psi = Psi;
+		this.K = K;
+		try {
+			setUpFromParms(false);
+		} catch (ProbDistParmException e) {
+			// Do nothing (should never occur)
+		}
 	}
 
 	@Override

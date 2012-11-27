@@ -5,6 +5,7 @@ import java.util.List;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
+import org.jqgibbs.mathstat.Numeric;
 
 public class MatrixNormalDist extends ProbDist<Double2D> {
 	
@@ -12,6 +13,13 @@ public class MatrixNormalDist extends ProbDist<Double2D> {
 	private Double2D M;
 	private Double2D Sg;
 	private Double2D Omega;
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.M = (Double2D)parms[0];
+		this.Sg = (Double2D)parms[1];
+		this.Omega = (Double2D)parms[2];
+	}
 	
 	public static Double3D variates(List<Double2D> RepM, Double3D ActiveSg, List<Double2D> Omega) throws ProbDistParmException {
 		boolean singleOmega = Omega.size() < RepM.size(); // using constant Omega across entries

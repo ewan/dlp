@@ -6,6 +6,7 @@ import java.util.List;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
+import org.jqgibbs.mathstat.Numeric;
 
 public class WishartDist extends ProbDist<Double2D> {
 
@@ -17,6 +18,13 @@ public class WishartDist extends ProbDist<Double2D> {
 
 	private GammaDist[] gammaDists;
 	private NormalDist normalDist;
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.Psi = (Double2D)parms[0];
+		this.K = (Double0D)parms[1];
+		setUpFromParms();
+	}
 	
 	public WishartDist(Double2D Psi, Double0D K, boolean checkParms) throws ProbDistParmException {
 		this.Psi = Psi;

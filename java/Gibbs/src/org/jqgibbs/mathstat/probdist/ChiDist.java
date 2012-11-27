@@ -3,11 +3,19 @@ package org.jqgibbs.mathstat.probdist;
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Integer0D;
+import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.ChiSquare;
 
 public class ChiDist extends ProbDist<Double0D> {
 
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		Integer0D DOF = (Integer0D)parms[0];
+		this.DOF = DOF;
+		setUpFromParms();
+	}
+	
 	private Integer0D DOF;
 
 	private ChiSquare chisqGen;

@@ -39,11 +39,11 @@ public class Gibbs {
 		return ssd;
 	}
 
-	private static String dataFileName = "/Users/jsf/Desktop/Baggett/Gibbs/Gibbs/spanish_mfiau_f0.txt";
+	private static String dataFileName = "/Users/jsf/Desktop/eclipse/gibbs/dlp/java/Gibbs/spanish_mfiau_f0.txt";
 	private static int maxIter = 50;//1000;
 	private static int burnIn = 10;//500;
 	private static int lag = 5;
-	private static String outFileName = "dumpY.out";
+	private static String outFileName = "dump.out";
 
 	public static void main(String[] args) throws Exception {
 		Double2D d;

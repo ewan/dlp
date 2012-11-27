@@ -18,10 +18,11 @@ public abstract class ProbDist<T extends Numeric> {
 
 	protected abstract T genVariate() throws ProbDistParmException;
 	
-	// Overridden for ProbDistInitializeByChain
-	protected void checkInitialized(Numeric... parms) {
-		// empty
-	}
+	/*
+	 * Initializes chain parms for ProbDistInitializeByChain,
+	 * Fixed parms for other distributions
+	 */
+	protected abstract void checkInitialized(Numeric... parms);
 	
 	/*
 	 * This is declared as final in order to guarantee that

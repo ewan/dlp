@@ -1,6 +1,7 @@
 package org.jqgibbs.mathstat.probdist;
 
 //import org.jqgibbs.mathstat.AbstractSequence;
+import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Numeric;
 
 public class IIDDist<U extends Numeric, T extends Numeric>
@@ -8,6 +9,15 @@ public class IIDDist<U extends Numeric, T extends Numeric>
 
 	private ProbDist<T> dist;
 	private int N;
+	
+	
+	// TODO: this seems wrong
+	// does variate() ever get called on IIDDist with parameters?
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.setDist((ProbDist<T>)parms[0]);
+		this.setN(((Integer0D)parms[1]).value());
+	}
 
 	protected void setDist(ProbDist<T> dist) {
 		this.dist = dist;

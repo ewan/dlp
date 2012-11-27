@@ -2,6 +2,7 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
+import org.jqgibbs.mathstat.Numeric;
 
 import umontreal.iro.lecuyer.probdistmulti.MultiNormalDist;
 import umontreal.iro.lecuyer.randvar.NormalGen;
@@ -23,6 +24,18 @@ public class MVNormalDist extends ProbDist<Double1D> {
 	private double log2Pi = Math.log(2*Math.PI);
 	private double logDetSg;
 	private Double2D sgInv;
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.Mu = (Double1D)parms[0];
+		this.Sg = (Double2D)parms[1];
+		try {
+			setUpFromParms();
+		} catch (ProbDistParmException e) {
+			// Hopefully this never happens
+			e.printStackTrace();
+		}
+	}
 	
 	public MVNormalDist() {
 		// Empty (fix?)

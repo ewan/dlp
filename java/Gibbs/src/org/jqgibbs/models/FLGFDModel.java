@@ -1,5 +1,8 @@
 package org.jqgibbs.models;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +32,7 @@ import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import cern.jet.stat.Gamma;
 
 public class FLGFDModel extends Model {
-
+	
 	private static double gammaD(double x, int d) { // FIXME
 		if (d == 1) {
 			return Gamma.gamma(x);
@@ -593,6 +596,7 @@ public class FLGFDModel extends Model {
 	}
 
 	class CRPDist extends ProbDistInitializeByChain<Integer1D> {
+		
 		// Fixed parameters
 		private Double2D Psi;
 		private Double0D kappa;
@@ -608,7 +612,7 @@ public class FLGFDModel extends Model {
 		private Double2D M;
 		private Double0D al;
 		
-		public CRPDist(Double2D Psi, Double0D kappa, Double2D Phi, Double0D lambda) throws ProbDistParmException {
+		public CRPDist(Double2D Psi, Double0D kappa, Double2D Phi, Double0D lambda) throws ProbDistParmException {			
 			this.Psi = Psi;
 			this.kappa = kappa;
 			this.Phi = Phi;
@@ -890,9 +894,6 @@ public class FLGFDModel extends Model {
 				// Select a category for this point
 				Double1D p = (new Double1D(logP)).minus(maxLogP).exp();
 				this.setPostProb(p);
-				if(i < 8) {
-					System.out.println(p);
-				}
 				int az = this.catVariate().value();
 				// Sample new category if necessary
 				Integer0D zedNew = null;

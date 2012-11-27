@@ -2,6 +2,7 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
+import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Beta;
 
@@ -17,6 +18,13 @@ public class BetaDist extends ProbDist<Double0D> {
 		if(checkParms) {
 			checkParms();
 		}
+		setUpFromParms();
+	}
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.shape1 = (Double0D)parms[0];
+		this.shape2 = (Double0D)parms[1];
 		setUpFromParms();
 	}
 	

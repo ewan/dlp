@@ -2,6 +2,7 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
+import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Gamma;
 
@@ -11,6 +12,13 @@ public class GammaDist extends ProbDist<Double0D> {
 	
 	private Gamma gammaGen;
 
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.shape = (Double0D)parms[0];
+		this.rate = (Double0D)parms[1];
+		setUpFromParms();
+	}
+	
 	public GammaDist(Double0D shape, Double0D rate, boolean checkParms) throws ProbDistParmException {
 		this.shape = shape;
 		this.rate = rate;

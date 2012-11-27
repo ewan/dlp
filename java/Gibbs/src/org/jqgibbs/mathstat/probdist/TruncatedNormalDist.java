@@ -2,6 +2,7 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
+import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Normal;
 import cern.jet.random.Uniform;
@@ -17,6 +18,18 @@ public class TruncatedNormalDist extends ProbDist<Double0D> {
 	private Double0D Mu;
 	private Double0D Sg;
 	private Double0D Min;
+	
+	protected void checkInitialized(Numeric... parms) {
+		if(parms.length == 0) return;
+		this.Mu = (Double0D)parms[0];
+		this.Sg = (Double0D)parms[1];
+		this.Min = (Double0D)parms[2];
+		try {
+			setUpFromParms();
+		} catch (ProbDistParmException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public TruncatedNormalDist(Double0D Mu, Double0D Sg, Double0D Min, boolean checkParms)
 			throws ProbDistParmException {
