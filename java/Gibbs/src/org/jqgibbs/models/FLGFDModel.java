@@ -895,6 +895,9 @@ public class FLGFDModel extends Model {
 				Double1D p = (new Double1D(logP)).minus(maxLogP).exp();
 				this.setPostProb(p);
 				int az = this.catVariate().value();
+//				if(az == 0) {
+//					System.out.println();
+//				}
 				// Sample new category if necessary
 				Integer0D zedNew = null;
 				if (az == newc) {
