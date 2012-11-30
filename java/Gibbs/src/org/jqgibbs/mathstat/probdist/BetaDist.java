@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Numeric;
 
@@ -61,8 +62,7 @@ public class BetaDist extends ProbDistInitializeDirectly<Double0D> {
 	@Override
 	protected void setUpFromParms() {
 		if (this.getBetaGen() == null) {
-			this.betaGen = new Beta(this.getShape1().value(), this.getShape2().value(), RandomEngine
-					.makeDefault());
+			this.betaGen = new Beta(this.getShape1().value(), this.getShape2().value(), RandomEngineSelector.getEngine());
 		} else {
 			this.getBetaGen().setState(this.getShape1().value(), this.getShape2().value());
 		}

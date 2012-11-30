@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Numeric;
@@ -55,8 +56,7 @@ public class ChiDist extends ProbDistInitializeDirectly<Double0D> {
 	@Override
 	protected void setUpFromParms() {
 		if (this.getChisqGen() == null) {
-			this.chisqGen = new ChiSquare(this.getDof().value(), RandomEngine
-					.makeDefault());
+			this.chisqGen = new ChiSquare(this.getDof().value(), RandomEngineSelector.getEngine());
 		} else {
 			this.getChisqGen().setState(this.getDof().value());
 		}

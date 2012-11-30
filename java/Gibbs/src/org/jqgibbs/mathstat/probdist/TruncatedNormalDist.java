@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Numeric;
 
@@ -89,7 +90,7 @@ public class TruncatedNormalDist extends ProbDistInitializeDirectly<Double0D> {
 			this.uniformGen = new Uniform(0, 1, (int) System.currentTimeMillis());
 		}
 		if (this.normalGen == null) {
-			this.normalGen = new Normal(0, 1, RandomEngine.makeDefault());
+			this.normalGen = new Normal(0, 1, RandomEngineSelector.getEngine());
 		}
 	}
 

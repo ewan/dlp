@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Numeric;
 
@@ -61,8 +62,7 @@ public class GammaDist extends ProbDistInitializeDirectly<Double0D> {
 	@Override
 	protected void setUpFromParms() {
 		if (this.getGammaGen() == null) {
-			this.gammaGen = new Gamma(this.getShape().value(), this.getRate().value(), RandomEngine
-					.makeDefault());
+			this.gammaGen = new Gamma(this.getShape().value(), this.getRate().value(), RandomEngineSelector.getEngine());
 		} else {
 			this.getGammaGen().setState(this.getShape().value(), this.getRate().value());
 		}

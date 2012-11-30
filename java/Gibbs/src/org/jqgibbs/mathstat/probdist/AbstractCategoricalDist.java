@@ -1,5 +1,6 @@
 package org.jqgibbs.mathstat.probdist;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Numeric;
@@ -40,7 +41,7 @@ public abstract class AbstractCategoricalDist extends
 		// *** FIXME***
 		if (this.getEmpiricalGen() == null) {
 			this.setEmpiricalGen(new EmpiricalWalker(p.value(),
-					Empirical.NO_INTERPOLATION, RandomEngine.makeDefault()));
+					Empirical.NO_INTERPOLATION, RandomEngineSelector.getEngine()));
 		} else {
 			assert this.initialized == true;
 			this.getEmpiricalGen().setState(p.value(),

@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Numeric;
 
@@ -80,7 +81,7 @@ public class NormalDist extends ProbDistInitializeDirectly<Double0D> {
 	@Override
 	protected void setUpFromParms() throws ProbDistParmException {
 		if (this.getNormalGen() == null) {
-			this.randomEngine = RandomEngine.makeDefault();
+			this.randomEngine = RandomEngineSelector.getEngine();
 			this.normalGen = new Normal(this.getMu().value(), this.getSg().value(),
 					this.getRandomEngine());
 		} else {
