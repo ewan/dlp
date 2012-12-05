@@ -39,7 +39,7 @@ public class Gibbs {
 		return ssd;
 	}
 
-	private static String dataFileName = "/Users/ewan/Work/git/dlp/java/Gibbs/spanish_mfiau_f0.txt";
+	private static String dataFileName = "/Users/jsf/Desktop/eclipse/gibbs/dlp/java/Gibbs/spanish_mfiau_f0.txt";
 	private static int maxIter = 1000;
 	private static int burnIn = 500;
 	private static int lag = 5;
