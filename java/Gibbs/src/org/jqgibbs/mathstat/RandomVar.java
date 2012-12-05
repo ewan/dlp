@@ -93,6 +93,12 @@ public class RandomVar<T extends Numeric> implements Numeric {
 		this.name = name;
 	}
 
+	/**
+	 * @design We only ever use getPrior() in the pointEstimate code; but it
+	 *         really doesn't matter there, and we can replace these
+	 *         instances. Ditch the prior field/accessors from RandomVar
+	 * @return The prior distribution for this random variable
+	 */	
 	protected void setPrior(ProbDist<T> prior) {
 		this.prior = prior;
 	}

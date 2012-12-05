@@ -1,32 +1,17 @@
 package org.jqgibbs;
 
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
 import org.jqgibbs.mathstat.Integer1D;
-import org.jqgibbs.mathstat.Integer2D;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.models.FLGFDModel;
-import org.jqgibbs.models.FLGFEModel;
-import org.jqgibbs.models.FLGFVModel;
-import org.jqgibbs.models.FLGFWModel;
-import org.jqgibbs.models.MVRModel;
-import org.jqgibbs.models.MpgModel;
-
-import cern.jet.random.Uniform;
-import cern.jet.random.engine.MersenneTwister;
 
 public class Gibbs {
 
-	private static Uniform unifGen = new Uniform(
-			new MersenneTwister(new Date()));	
-	
 	public static double[] parseDoubleArray(String[] ss) {
 		double[] ssd = new double[ss.length];
 		for (int i = 0; i < ss.length; i++) {

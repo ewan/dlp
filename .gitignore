@@ -1,4 +1,6 @@
 java/Gibbs/bin
+java/Gibbs/doc
 java/Gibbs/.project
 java/Gibbs/.classpath
+java/Gibbs/dump.out
 java/Gibbs/src/org/jqgibbs/GibbsEwan.java
