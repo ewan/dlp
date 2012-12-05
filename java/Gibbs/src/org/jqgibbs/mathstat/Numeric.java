@@ -1,5 +1,11 @@
 package org.jqgibbs.mathstat;
 
+/**
+ * @review dropped sequence() method and breathed easy 
+ * 
+ * @author josh
+ *
+ */
 public abstract interface Numeric extends Cloneable {
 	public Double1D rowVec();
 	public int length1D();

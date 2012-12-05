@@ -12,6 +12,13 @@ import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 
+/**
+ * @review review this class later (mostly old code)
+ * 
+ * @author ewan
+ * @author josh
+ *
+ */
 /*
  * TODO
  * Is it appropriate to have a new Exception subclass here?

@@ -24,7 +24,9 @@ public class BetaDist extends ProbDist<Double0D> {
 
 	/**
 	 * @error Need to check to see if the distribution is initialized on a
-	 *        0-args call
+	 *        0-args call - do this everywhere using the initialized flag, and
+	 *        make sure there is a robust mechanism for zero-args constructor
+	 *        calls creating uninitialized distribution objects
 	 */
 	protected void checkInitialized(Numeric... parms) {
 		if (parms.length == 0)
@@ -34,18 +36,20 @@ public class BetaDist extends ProbDist<Double0D> {
 		setUpFromParms();
 	}
 
-
 	/**
-	 * Beta distribution.
-	 * <br>
+	 * Beta distribution. <br>
+	 * 
 	 * <pre>
 	 * f(x) \propto x^(shape1 - 1) * (1-x)^(shape2 - 1)
 	 * </pre>
 	 * 
-	 * @param shape1 The "x" parameter (see above). Must be positive.
-	 * @param shape2 The "1-x" parameter (see above). Must be positive.
-	 * @throws ProbDistParmException if either parameter is non-positive
-	 */	
+	 * @param shape1
+	 *            The "x" parameter (see above). Must be positive.
+	 * @param shape2
+	 *            The "1-x" parameter (see above). Must be positive.
+	 * @throws ProbDistParmException
+	 *             if either parameter is non-positive
+	 */
 	public BetaDist(Double0D shape1, Double0D shape2)
 			throws ProbDistParmException {
 		this(shape1, shape2, CHECK_PARMS);

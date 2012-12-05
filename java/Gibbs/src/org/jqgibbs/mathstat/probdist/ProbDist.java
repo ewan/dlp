@@ -63,7 +63,10 @@ import org.jqgibbs.mathstat.Numeric;
  *         would be that we could still drop the varargs and simply add a
  *         variate(ChainLink) method (we probably ought to make the data part of
  *         the initialization; it's just another observed variable, and not all
- *         variables will ultimately make use of it).
+ *         variables will ultimately make use of it). I think the current state
+ *         of affairs whereby there are two ways to specify the parameters to a
+ *         ProbDistInitializeDirectly (varargs in the variate(...) calls and
+ *         explicitly in the constructor) is undesirable.
  * 
  * @review The old design had a varargs constructor as part of the interface, as
  *         well. This constructor was not really to be messed with, and it
@@ -73,36 +76,36 @@ import org.jqgibbs.mathstat.Numeric;
  *         by initializeParms. In practice, what this meant was something for
  *         ProbDistInitializeByChain (which preInitialized by setting the fixed
  *         parameters) and nothing for ProbDistInitializeDirectly (which just
- *         called initializeParms). Thus, in effect, the varargs in the constructor
- *         actually referred to two totally different things - in one case,
- *         something totally different than the varargs
- *         in the ordinary methods, namely the fixed parameters used as part
- *         of a ProbDistInitializeByChain; in the other, the regular parameters
- *         with their regular checks. We can safely remove this constructor
- *         and the pre-initialization it does and in so doing just remove all
- *         vestiges of any parameter initialization from the constructor, and that's
+ *         called initializeParms). Thus, in effect, the varargs in the
+ *         constructor actually referred to two totally different things - in
+ *         one case, something totally different than the varargs in the
+ *         ordinary methods, namely the fixed parameters used as part of a
+ *         ProbDistInitializeByChain; in the other, the regular parameters with
+ *         their regular checks. We can safely remove this constructor and the
+ *         pre-initialization it does and in so doing just remove all vestiges
+ *         of any parameter initialization from the constructor, and that's
  *         what's been done here. This means that we now have available for
  *         actual use a zero-args constructor (namely, the one inherited from
  *         Object) whereas before the parameter initialization could in
- *         principle have barfed on a zero-args call (because it would have
- *         gone to the varargs). Perhaps somewhat confusingly, this was the
- *         case (barfing, that is) for ProbDistInitializeByChain but not
- *         ProbDistInitializeDirectly. One possible explanation for this is
- *         that the constructor was simply the only method I set up for setting
- *         the fixed parameters, as I was already putting the variate(...)
- *         args to a dedicated use passing in the data/chain. At any rate,
- *         I believe there is now a use for the zero-arg constructor, because
- *         there is a reason to create an uninitialized object: it allows
- *         us to clean up the branching logic which is used throughout the
- *         model inner classes whereby one either creates, or simply resets
- *         the parameters of, a distribution object (such as the
- *         MVNormalDist mentioned in a review comment in PostMDist). Oddly,
- *         this is not a case where I actually *needed* to do this, as far
- *         as I can tell, as a zero-args constructor call should have had the
- *         desired effect for a ProbDistInitializeDirectly all along. This
- *         should be changed with a very careful eye to things that might
- *         be breaking (perhaps try changing first in the ewan branch, which
- *         preserves the varargs constructor).
+ *         principle have barfed on a zero-args call (because it would have gone
+ *         to the varargs). Perhaps somewhat confusingly, this was the case
+ *         (barfing, that is) for ProbDistInitializeByChain but not
+ *         ProbDistInitializeDirectly. One possible explanation for this is that
+ *         the constructor was simply the only method I set up for setting the
+ *         fixed parameters, as I was already putting the variate(...) args to a
+ *         dedicated use passing in the data/chain. At any rate, I believe there
+ *         is now a use for the zero-arg constructor, because there is a reason
+ *         to create an uninitialized object: it allows us to clean up the
+ *         branching logic which is used throughout the model inner classes
+ *         whereby one either creates, or simply resets the parameters of, a
+ *         distribution object (such as the MVNormalDist mentioned in a review
+ *         comment in PostMDist). Oddly, this is not a case where I actually
+ *         *needed* to do this, as far as I can tell, as a zero-args constructor
+ *         call should have had the desired effect for a
+ *         ProbDistInitializeDirectly all along. This should be changed with a
+ *         very careful eye to things that might be breaking (perhaps try
+ *         changing first in the ewan branch, which preserves the varargs
+ *         constructor).
  * 
  * @author josh
  * @author ewan

@@ -127,6 +127,9 @@ public class RandomVar<T extends Numeric> implements Numeric {
 		return this.cloneWith(clone);
 	}
 	
+	/**
+	 * @review do a complete review of all uses of rv name
+	 */
 	//@Override
 	public String toString() {
 		return this.getNumericValue().toString();
