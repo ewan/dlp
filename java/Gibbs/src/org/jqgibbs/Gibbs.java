@@ -42,7 +42,7 @@ public class Gibbs {
 	private static String dataFileName = "/Users/ewan/Work/School/Projects/dlp/java/Gibbs/spanish_mfiau_f0.txt";
 	//private static String dataFileName = "/Users/jsf/Desktop/eclipse/gibbs/dlp/java/Gibbs/spanish_mfiau_f0.txt";
 	private static int maxIter = 500;//1000;
-	private static int burnIn = 10;//500;
+	private static int burnIn = 0;//500;
 	private static int lag = 5;
 	private static String outFileName = "dump.out";
 
