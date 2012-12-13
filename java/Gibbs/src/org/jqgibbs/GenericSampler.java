@@ -1,11 +1,8 @@
 package org.jqgibbs;
 
-import java.util.List;
 
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
-import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
 public class GenericSampler extends Sampler {
