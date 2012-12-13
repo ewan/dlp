@@ -28,42 +28,18 @@ import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
 public class RandomVar<T extends Numeric> implements Numeric {
 	private String name;
-	private ProbDist<T> prior;
 	private ProbDist<T> posterior;
 	private T numericValue;
 
-	public RandomVar(String name, ProbDist<T> prior,
-			ProbDist<T> posterior, T t) {
+	public RandomVar(String name, ProbDist<T> posterior, T t) {
 		this.setName(name);
-		this.setPrior(prior);
 		this.setPosterior(posterior);
 		this.setNumericValue(t);
-	}
-
-	public void updatePrior() {
-		try {
-			this.setNumericValue(this.getPrior().variate());
-		} catch (ProbDistParmException e) {
-			throw new IllegalStateException(
-					"Encountered bug: Unexpected ProbDistParmException "
-							+ "from 0-arg call to ProbDist.variate()", e);
-		}
 	}
 
 	public void updatePosterior(ChainLink l, Double2D d)
 			throws ProbDistParmException {
 		this.setNumericValue(this.getPosterior().variate(l, d));
-	}	
-	
-	public RandomVar<T> samplePrior() {
-		try {
-			T t = this.getPrior().variate();
-			return this.cloneWith(t);
-		} catch (ProbDistParmException e) {
-			throw new IllegalStateException(
-					"Encountered bug: Unexpected ProbDistParmException "
-							+ "from 0-arg call to ProbDist.variate()", e);
-		}
 	}
 
 	public RandomVar<T> samplePosterior(ChainLink l, SamplerData d)
@@ -73,8 +49,7 @@ public class RandomVar<T extends Numeric> implements Numeric {
 	}
 
 	public RandomVar<T> cloneWith(T t) {
-		return new RandomVar<T>(this.getName(), this.getPrior(), this
-				.getPosterior(), t);
+		return new RandomVar<T>(this.getName(), this.getPosterior(), t);
 	}
 
 	public String getName() {
@@ -111,7 +86,7 @@ public class RandomVar<T extends Numeric> implements Numeric {
 
 	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException {
-		RandomVar<T> clone = new RandomVar<T>(this.getName(), this.getPrior(),
+		RandomVar<T> clone = new RandomVar<T>(this.getName(),
 				this.getPosterior(), (T) this.getNumericValue().clone());
 		return clone;
 	}
@@ -120,15 +95,15 @@ public class RandomVar<T extends Numeric> implements Numeric {
 		T clone = (T) this.getNumericValue().cloneFromVector(v);
 		return this.cloneWith(clone);
 	}
-	
-	//@Override
+
+	// @Override
 	public String toString() {
 		return this.getNumericValue().toString();
-//		return this.getName() + ": " + this.getNumericValue().toString();
+		// return this.getName() + ": " + this.getNumericValue().toString();
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	//@Override
+	// @Override
 	public boolean equals(Object o) {
 		if (!(this.getClass().isAssignableFrom(o.getClass()))) {
 			return false;
@@ -139,23 +114,24 @@ public class RandomVar<T extends Numeric> implements Numeric {
 		}
 		return this.getNumericValue().equals(((RandomVar<T>) o).getNumericValue());
 	}
-	
-	//@Override
+
+	// @Override
 	public int hashCode() {
 		return this.getName().hashCode() + this.getNumericValue().hashCode();
 	}
-	
-	//@Override
+
+	// @Override
 	public Double1D rowVec() {
 		return this.getNumericValue().rowVec();
 	}
 
-	//@Override
+	// @Override
 	public int length1D() {
 		return this.getNumericValue().length1D();
 	}
 
-	public void updatePosteriorFast(ChainLink l, Double2D d) throws ProbDistParmException {
-		this.setNumericValue(this.getPosterior().variateFast(l, d));		
+	public void updatePosteriorFast(ChainLink l, Double2D d)
+			throws ProbDistParmException {
+		this.setNumericValue(this.getPosterior().variateFast(l, d));
 	}
 }
