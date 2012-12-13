@@ -135,7 +135,7 @@ jqgibbs <- function(data, model.fn, model.class, name, samplerClass, hypers, ini
     rm(ch)
   }
   # Return the mixture object
-  m <- mixture(chobj, data, model.fn, model.class)
+  m <- mixture(chobj, data, model.fn, model.class, hyperobj)
   rm(chobj)
   gc()
   return(m)
@@ -530,10 +530,10 @@ mixture.qchain <- function(ch) {
   return(m)
 }
 
-mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel) {
+mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel, hyperobj) {
   ch <- qchain(chobj, data, model.fn, jqgmodel)
   if (length(.jmethods(J(jqgmodel), "pointEstimate")) > 0) {
-    ptechlobj <- J(jqgmodel)$pointEstimate(chobj, jqgobj(data$data))
+    ptechlobj <- J(jqgmodel)$pointEstimate(chobj, jqgobj(data$data), hyperobj)
     ptechobj <- .jnew("org/jqgibbs/Chain")
     ptechobj$addLink(ptechlobj)
     ptech <- qchain(ptechobj, data, model.fn, jqgmodel)
