@@ -746,7 +746,6 @@ public class FLGFDModel extends Model {
 	}
 
 	@SuppressWarnings("unchecked")
-	// FIXME - add this argument
 	public static ChainLink pointEstimate(List<ChainLink> c, Double2D d, Map<String,Numeric> hypers)
 			throws ProbDistParmException {
 		// MAP
@@ -774,7 +773,9 @@ public class FLGFDModel extends Model {
 			// Hyperparameters
 			RandomVar<Double0D> rvAl = (RandomVar<Double0D>) cli.get("al");
 			Double0D al = rvAl.getNumericValue();
-			apost += rvAl.getPrior().logDensity(al); //  TODO - everything
+			GammaDist gammaDist = new GammaDist((Double0D) hypers.get("ala"),
+												(Double0D) hypers.get("alb"));
+			apost += gammaDist.logDensity(al); // TODO - check
 			// Model parameters and likelihood
 			RandomVar<Double3D> rvSg = (RandomVar<Double3D>) cli.get("Sg");
 			RandomVar<Double3D> rvA = (RandomVar<Double3D>) cli.get("A");

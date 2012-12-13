@@ -68,14 +68,6 @@ public class RandomVar<T extends Numeric> implements Numeric {
 		this.name = name;
 	}
 
-	protected void setPrior(ProbDist<T> prior) {
-		this.prior = prior;
-	}
-
-	public ProbDist<T> getPrior() {
-		return prior;
-	}
-
 	protected void setPosterior(ProbDist<T> posterior) {
 		this.posterior = posterior;
 	}
