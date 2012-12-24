@@ -3,6 +3,7 @@ package org.jqgibbs.mathstat.probdist;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Numeric;
@@ -123,9 +124,7 @@ public class MVNormalDist extends ProbDistInitializeDirectly<Double1D> {
 	@Override
 	protected void setUpFromParms() throws ProbDistParmException {
 		if (this.getMVNormalGen() == null) {
-			Class<MRG32k3a> c = MRG32k3a.class;
-			RandomStreamFactory rsf = new BasicRandomStreamFactory(c);
-			RandomStream rs = rsf.newInstance();
+			RandomStream rs = RandomEngineSelector.getStream();
 			this.normalGen = new NormalGen(rs);
 			this.mvnGen = new MultinormalCholeskyGen(this.getNormalGen(), this
 					.getMu().value(), this.getSg().toColt());

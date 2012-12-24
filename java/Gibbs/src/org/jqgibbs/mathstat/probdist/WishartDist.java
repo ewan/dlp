@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.AbstractSequence;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
@@ -12,6 +13,7 @@ import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Numeric;
 
 import cern.colt.matrix.linalg.LUDecomposition;
+import cern.jet.random.engine.RandomEngine;
 
 public class WishartDist extends ProbDistInitializeDirectly<Double2D> {
 
@@ -133,23 +135,26 @@ public class WishartDist extends ProbDistInitializeDirectly<Double2D> {
 			// Indices of a d x d matrix that will be sqrt gamma (diagonal), then indices
 			// that will be normal
 			// (below-diagonals)
+			int p = this.getDims();
 			List<int[]> indices = new LinkedList<int[]>();
-			for (int i = 0; i < this.getDims(); i++) {
+			for (int i = 0; i < p; i++) {
 				indices.add(new int[] { i, i });
 			} // Sqrt gamma
-			for (int i = 0; i < (this.getDims() - 1); i++) {
-				for (int j = (i + 1); j < this.getDims(); j++) {
+			for (int i = 0; i < (p-1); i++) {
+				for (int j = (i + 1); j < p; j++) {
 					indices.add(new int[] { i, j });
 				} // Normal
 			}
 			// Sqrt gamma variates, then normal variates
-			double[] v = new double[this.getDims()];
-			for (int i = 0; i < this.getDims(); i++) {
+			double[] v = new double[p + (p-1)*p/2];
+			for (int i = 0; i < p; i++) {
 				v[i] = this.getGammaDists()[i].variate().sqrt().value();
 			}
+			for (int i = 0; i < (p-1)*p/2; i++) {
+				v[p+i] = this.getNormalDist().variate().value();
+			}
 			Double1D values = new Double1D(v);
-			values.addAll(this.getNormalDist().variatesIID((this.getDims() - 1) * this.getDims() / 2));
-			Double2D Z = new Double2D(this.getDims(), this.getDims(), indices, values);
+			Double2D Z = new Double2D(p, p, indices, values);
 			// Bartlett decomposition: step 3: return LZZ'L'
 			Double2D LZ = L.mult(Z);
 			A = LZ.mult(LZ.transpose());
