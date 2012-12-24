@@ -14,9 +14,12 @@ public abstract class ProbDistInitializeByChain<T extends Numeric> extends ProbD
 	protected abstract void initializeChainParms(ChainLink l);
 	protected abstract void setUpFromChainParms();
 
+	/**
+	 * @ewan fix this
+	 */
 	@Override
 	protected void checkInitialized(Numeric... parms) {
-		if(parms.length == 0) return;
+		//if(parms.length == 0) return;
 		this.data = (Double2D)parms[1];
 		this.initializeChainParms((ChainLink)parms[0]);
 		this.setUpFromChainParms();

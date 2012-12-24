@@ -25,7 +25,7 @@ import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.UndirectedGraph;
 import org.jqgibbs.mathstat.probdist.BetaDist;
-import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByP;
+import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
@@ -770,7 +770,7 @@ public class FLGFAModel extends Model {
 		}
 
 		protected Double1D postProb;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private HashMap<Integer0D, MVNormalDist> mvnDists; // Shouldn't you be
 		// using (and
 		// hacking)
@@ -807,7 +807,7 @@ public class FLGFAModel extends Model {
 
 		protected Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostProb());
 				return this.catDist.variate();
 			} else {
@@ -1256,7 +1256,7 @@ public class FLGFAModel extends Model {
 
 	class PostAlDist extends ProbDistInitializeByChain<Double0D> {
 		private GammaDist gammaDist;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private Double0D postAlA;
 		private Double0D postAlB;
 		private Double1D postMix;
@@ -1305,7 +1305,7 @@ public class FLGFAModel extends Model {
 
 		private Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostMix());
 				return this.catDist.variate();
 			} else {
@@ -1535,8 +1535,8 @@ public class FLGFAModel extends Model {
 	// // Take consistent pairs
 	// Double1D ppair = pairsSeq.mean();
 	// int[] pairsi = new int[nPairs];
-	// // CategoricalDistInitializeByP dist = new
-	// // CategoricalDistInitializeByP(new Double1D(0.5, 0.5));
+	// // CategoricalDist dist = new
+	// // CategoricalDist(new Double1D(0.5, 0.5));
 	// for (int i = 0; i < nPairs; i++) {
 	// double p = ppair.get(i).value();
 	// // pairsi[i] = dist.variateFast(new Double1D((1-p), p)).value();

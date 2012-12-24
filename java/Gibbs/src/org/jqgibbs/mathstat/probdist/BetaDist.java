@@ -9,67 +9,67 @@ import cern.jet.random.Beta;
 public class BetaDist extends ProbDist<Double0D> {
 	private Double0D shape1;
 	private Double0D shape2;
-	
+
 	private Beta betaGen;
 
-	public BetaDist(Double0D shape1, Double0D shape2, boolean checkParms) throws ProbDistParmException {
-		this.shape1 = shape1;
-		this.shape2 = shape2;
-		if(checkParms) {
-			checkParms();
-		}
-		setUpFromParms();
-	}
-	
 	protected void checkInitialized(Numeric... parms) {
-		if(parms.length == 0) return;
-		this.shape1 = (Double0D)parms[0];
-		this.shape2 = (Double0D)parms[1];
-		setUpFromParms();
+		if (parms.length < 2) {
+			if (!this.initialized) {
+				throw new IllegalStateException(
+						"use of uninitialized probability distribution");
+			}
+		} else {
+			this.setParms((Double0D) parms[0], (Double0D) parms[1]);
+		}
 	}
-	
-	public BetaDist(Double0D shape1, Double0D shape2) throws ProbDistParmException {
+
+	public BetaDist(Double0D shape1, Double0D shape2, boolean checkParms) {
+		this.setParms(shape1, shape2, checkParms);
+	}
+
+	public BetaDist(Double0D shape1, Double0D shape2) {
 		this(shape1, shape2, CHECK_PARMS);
 	}
-	
-	private void checkParms() throws ProbDistParmException {
-		if(this.shape1.value() <= 0) {
-			throw new ProbDistParmException("shape1 must be positive");
+
+	public void setParms(Double0D shape1, Double0D shape2, boolean checkParms) {
+		this.shape1 = shape1;
+		this.shape2 = shape2;
+		this.setUpFromParms(checkParms);
+		this.initialized = true;
+	}
+
+	public void setParms(Double0D shape1, Double0D shape2) {
+		this.setParms(shape1, shape2, CHECK_PARMS);
+	}
+
+	private void checkParms() {
+		if (this.shape1.value() <= 0) {
+			throw new IllegalArgumentException("shape1 must be positive");
 		}
-		if(this.shape2.value() <= 0) {
-			throw new ProbDistParmException("shape2 must be positive");
+		if (this.shape2.value() <= 0) {
+			throw new IllegalArgumentException("shape2 must be positive");
 		}
 	}
-	
-	protected Beta getBetaGen() {
-		return this.betaGen;
-	}
-	
-	private Double0D getShape1() {
-		return shape1;
-	}
-	
-	private Double0D getShape2() {
-		return shape2;
-	}		
-	
-	private void setUpFromParms() {
-		if (this.getBetaGen() == null) {
-			this.betaGen = new Beta(this.getShape1().value(), this.getShape2().value(), RandomEngineSelector
-					.getEngine());
+
+	private void setUpFromParms(boolean checkParms) {
+		if (checkParms) {
+			this.checkParms();
+		}
+		if (this.betaGen == null) {
+			this.betaGen = new Beta(this.shape1.value(), this.shape2.value(),
+					RandomEngineSelector.getEngine());
 		} else {
-			this.getBetaGen().setState(this.getShape1().value(), this.getShape2().value());
+			this.betaGen.setState(this.shape1.value(), this.shape2.value());
 		}
 	}
 
 	@Override
-	protected Double0D genVariate() throws ProbDistParmException {
-		assert this.initialized;
-		return new Double0D(this.getBetaGen().nextDouble());
+	protected Double0D genVariate() {
+		return new Double0D(this.betaGen.nextDouble());
 	}
 
 	@Override
 	protected double getDensity(Double0D pt) {
 		throw new UnsupportedOperationException("Too lazy, come back later");
-	}		
+	}
 }

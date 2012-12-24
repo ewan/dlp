@@ -10,54 +10,59 @@ import cern.jet.random.ChiSquare;
 public class ChiDist extends ProbDist<Double0D> {
 
 	protected void checkInitialized(Numeric... parms) {
-		if(parms.length == 0) return;
-		Integer0D DOF = (Integer0D)parms[0];
-		this.DOF = DOF;
-		setUpFromParms();
+		if (parms.length < 1) {
+			if (!this.initialized) {
+				throw new IllegalStateException(
+						"use of uninitialized probability distribution");
+			}
+		} else {
+			this.setParms((Integer0D) parms[0]);
+		}
 	}
-	
-	private Integer0D DOF;
+
+	private Integer0D dof;
 
 	private ChiSquare chisqGen;
 
-	public ChiDist(Integer0D DOF, boolean checkParms) throws ProbDistParmException {
-		this.DOF = DOF;
-		if(checkParms) {
-			checkParms();
+	public ChiDist(Integer0D dof, boolean checkParms) {
+		this.setParms(dof, checkParms);
+	}
+
+	public ChiDist(Integer0D dof) {
+		this(dof, CHECK_PARMS);
+	}
+
+	public void setParms(Integer0D dof, boolean checkParms) {
+		this.dof = dof;
+		this.setUpFromParms(checkParms);
+		this.initialized = true;
+	}
+
+	public void setParms(Integer0D dof) {
+		this.setParms(dof, CHECK_PARMS);
+	}
+
+	private void checkParms() {
+		if (this.dof.value() <= 0) {
+			throw new IllegalArgumentException("DOF must be positive");
 		}
-		setUpFromParms();
 	}
-	
-	public ChiDist(Integer0D DOF) throws ProbDistParmException {
-		this(DOF, CHECK_PARMS);
-	}
-	
-	private void checkParms() throws ProbDistParmException {
-		if(DOF.value() <= 0) {
-			throw new ProbDistParmException("DOF must be positive");
+
+	private void setUpFromParms(boolean checkParms) {
+		if (checkParms) {
+			this.checkParms();
 		}
-	}
-
-	private Integer0D getDof() {
-		return DOF;
-	}
-
-	private ChiSquare getChisqGen() {
-		return chisqGen;
-	}
-
-	private void setUpFromParms() {
-		if (this.getChisqGen() == null) {
-			this.chisqGen = new ChiSquare(this.getDof().value(), RandomEngineSelector.getEngine());
+		if (this.chisqGen == null) {
+			this.chisqGen = new ChiSquare(this.dof.value(),
+					RandomEngineSelector.getEngine());
 		} else {
-			this.getChisqGen().setState(this.getDof().value());
+			this.chisqGen.setState(this.dof.value());
 		}
 	}
 
 	@Override
-	protected Double0D genVariate() throws ProbDistParmException {
-		assert this.initialized;
-		return new Double0D(Math.sqrt(this.getChisqGen().nextDouble()));
+	protected Double0D genVariate() {
+		return new Double0D(Math.sqrt(this.chisqGen.nextDouble()));
 	}
 
 	@Override

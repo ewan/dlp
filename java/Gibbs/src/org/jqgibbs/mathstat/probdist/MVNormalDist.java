@@ -1,5 +1,6 @@
 package org.jqgibbs.mathstat.probdist;
 
+import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Numeric;
@@ -14,128 +15,101 @@ import umontreal.iro.lecuyer.rng.RandomStreamFactory;
 
 public class MVNormalDist extends ProbDist<Double1D> {
 
+	private static double log2Pi = Math.log(2 * Math.PI);
+
 	private NormalGen normalGen;
 	private MultinormalCholeskyGen mvnGen;
 	private MultiNormalDist mvnDist;
-	
-	private Double1D Mu;
+
+	private Double1D mu;
 	private Double2D Sg;
-	
-	private double log2Pi = Math.log(2*Math.PI);
+
 	private double logDetSg;
-	private Double2D sgInv;
-	
+	private Double2D SgInv;
+
+	private int p;
+
 	protected void checkInitialized(Numeric... parms) {
-		if(parms.length == 0) return;
-		this.Mu = (Double1D)parms[0];
-		this.Sg = (Double2D)parms[1];
-		try {
-			setUpFromParms();
-		} catch (ProbDistParmException e) {
-			// Hopefully this never happens
-			e.printStackTrace();
+		if (parms.length < 2) {
+			if (!this.initialized) {
+				throw new IllegalStateException(
+						"use of uninitialized probability distribution");
+			}
+		} else {
+			this.setParms((Double1D) parms[0], (Double2D) parms[1]);
 		}
 	}
-	
+
 	public MVNormalDist() {
 		// Empty (fix?)
 	}
-	
-	protected double getLog2Pi() {
-		return this.log2Pi;
-	}
-	
-	protected void setLogDetSg(Double2D sg) {
-		this.logDetSg = Math.log(sg.det());
-	}
-	
-	protected double getLogDetSg() {
-		return this.logDetSg;
-	}
-	
-	protected void setSgInv(Double2D sg) {
-		this.sgInv = sg.inverse();
-	}
-	
-	protected Double2D getSgInv() {
-		return this.sgInv;
+
+	public MVNormalDist(Double1D mu, Double2D Sg, boolean checkParms) {
+		this.setParms(mu, Sg, CHECK_PARMS);
 	}
 
-	public MVNormalDist(Double1D Mu, Double2D Sg) throws ProbDistParmException {
-		this.Mu = Mu;
+	public MVNormalDist(Double1D mu, Double2D Sg) {
+		this(mu, Sg, CHECK_PARMS);
+	}
+
+	public void setParms(Double1D mu, Double2D Sg, boolean checkParms) {
+		this.mu = mu;
 		this.Sg = Sg;
-		setUpFromParms();
+		this.setUpFromParms(checkParms);
+		this.initialized = true;
 	}
 
-	private Double1D getMu() {
-		return Mu;
+	public void setParms(Double1D mu, Double2D Sg) {
+		this.setParms(mu, Sg, CHECK_PARMS);
 	}
 
-	private Double2D getSg() {
-		return Sg;
-	}	
-	
-	private int getDims() {
-		return this.getMu().size();
-	}
-	
-	private NormalGen getNormalGen() {
-		return this.normalGen;
-	}
-
-	private MultinormalCholeskyGen getMVNormalGen() {
-		return this.mvnGen;
-	}	
-
-	private MultiNormalDist getMVNormalDist() {
-		return this.mvnDist;
-	}
-	
-	public void checkParms() throws ProbDistParmException {
-		if(! (Sg.square() && Sg.numCols() == getDims())) {
-			throw new ProbDistParmException("Expected square matrix for Sg");
+	public void checkParms() {
+		if (!this.Sg.square()) {
+			throw new IllegalArgumentException("Expected square matrix for Sg");
+		}
+		if (!(this.Sg.numRows() == this.mu.size())) {
+			throw new IllegalArgumentException("mu is of length "
+					+ this.mu.size() + ", but Sg is " + this.Sg.numRows()
+					+ " by " + this.Sg.numRows());
 		}
 	}
-	
-	private void setUpFromParms() throws ProbDistParmException {
-		if (this.getMVNormalGen() == null) {
-			Class<MRG32k3a> c = MRG32k3a.class;
-			RandomStreamFactory rsf = new BasicRandomStreamFactory(c);
-			RandomStream rs = rsf.newInstance();
+
+	private void setUpFromParms(boolean checkParms) {
+		if (checkParms) {
+			this.checkParms();
+		}
+		this.p = this.mu.size();
+		if (!this.initialized) {
+			RandomStream rs = RandomEngineSelector.getStream();
 			this.normalGen = new NormalGen(rs);
-			this.mvnGen = new MultinormalCholeskyGen(this.getNormalGen(), this
-					.getMu().value(), this.getSg().toColt());
+			this.mvnGen = new MultinormalCholeskyGen(this.normalGen,
+					this.mu.value(), this.Sg.toColt());
+			this.mvnDist = new MultiNormalDist(this.mu.value(), this.Sg.value());
 		} else {
-			assert this.getNormalGen() != null;
-			this.getMVNormalGen().setMu(this.getMu().value());
-			this.getMVNormalGen().setSigma(this.getSg().toColt());
+			this.mvnGen.setMu(this.mu.value());
+			this.mvnGen.setSigma(this.Sg.toColt());
+			this.mvnDist.setParams(this.mu.value(), this.Sg.value());
 		}
-		if (this.getMVNormalDist() == null) {
-			this.mvnDist = new MultiNormalDist(this.getMu().value(), this.getSg().value());
-		} else {
-			assert this.getMVNormalDist() != null;
-			this.getMVNormalDist().setParams(this.getMu().value(), this.getSg().value());
-		}
-		this.setLogDetSg(this.getSg());
-		this.setSgInv(this.getSg());
+		this.logDetSg = Math.log(this.Sg.det());
+		this.SgInv = this.Sg.inverse();
 	}
 
 	@Override
-	protected Double1D genVariate() throws ProbDistParmException {
-		double[] p = new double[this.getDims()];
-		this.getMVNormalGen().nextPoint(p);
-		return new Double1D(p);
+	protected Double1D genVariate() {
+		double[] pt = new double[this.p];
+		this.mvnGen.nextPoint(pt);
+		return new Double1D(pt);
 	}
 
 	@Override
-	protected double getDensity(Double1D pt) throws ProbDistParmException {
-		return this.getMVNormalDist().density(pt.value());
+	protected double getDensity(Double1D pt) {
+		return this.mvnDist.density(pt.value());
 	}
-	
+
 	@Override
-	protected double getLogDensity(Double1D pt) throws ProbDistParmException {
-		Double1D dev = pt.minus(this.getMu());
-		double mahal = dev.mult(this.getSgInv()).mult(dev);
+	protected double getLogDensity(Double1D pt) {
+		Double1D dev = pt.minus(this.mu);
+		double mahal = dev.mult(this.SgInv).mult(dev);
 		if (Double.isInfinite(mahal)) {
 			System.err.println("Warning: infinite Mahalanobis distance");
 			return -Double.MAX_VALUE;
@@ -144,10 +118,10 @@ public class MVNormalDist extends ProbDist<Double1D> {
 			System.err.println("Warning: NaN Mahalanobis distance");
 			System.err.println("pt: " + pt);
 			System.err.println("dev: " + dev);
-			System.err.println("mu: " + this.getMu());
-			System.err.println("sg: " + this.getSg());
-			System.err.println("sgInv: " + this.getSgInv());
+			System.err.println("mu: " + this.mu);
+			System.err.println("sg: " + this.Sg);
+			System.err.println("sgInv: " + this.SgInv);
 		}
-		return -0.5*(this.getDims()*this.getLog2Pi() + this.getLogDetSg() + mahal);
+		return -0.5 * (this.p * MVNormalDist.log2Pi + this.logDetSg + mahal);
 	}
 }

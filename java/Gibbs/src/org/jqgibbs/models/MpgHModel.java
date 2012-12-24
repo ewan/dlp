@@ -16,7 +16,7 @@ import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.ListSequence;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
-import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByP;
+import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;

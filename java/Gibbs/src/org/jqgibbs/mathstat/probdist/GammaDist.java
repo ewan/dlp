@@ -9,70 +9,71 @@ import cern.jet.random.Gamma;
 public class GammaDist extends ProbDist<Double0D> {
 	private Double0D shape;
 	private Double0D rate;
-	
+
 	private Gamma gammaGen;
 
 	protected void checkInitialized(Numeric... parms) {
-		if(parms.length == 0) return;
-		this.shape = (Double0D)parms[0];
-		this.rate = (Double0D)parms[1];
-		setUpFromParms();
-	}
-	
-	public GammaDist(Double0D shape, Double0D rate, boolean checkParms) throws ProbDistParmException {
-		this.shape = shape;
-		this.rate = rate;
-		if(checkParms) {
-			checkParms();
+		if (parms.length < 2) {
+			if (!this.initialized) {
+				throw new IllegalStateException(
+						"use of uninitialized probability distribution");
+			}
+		} else {
+			this.setParms((Double0D) parms[0], (Double0D) parms[1]);
 		}
-		setUpFromParms();
 	}
-	
-	public GammaDist(Double0D shape, Double0D rate) throws ProbDistParmException {
+
+	public GammaDist(Double0D shape, Double0D rate, boolean checkParms) {
+		this.setParms(shape, rate, checkParms);
+	}
+
+	public GammaDist(Double0D shape, Double0D rate) {
 		this(shape, rate, CHECK_PARMS);
 	}
-	
-	private void checkParms() throws ProbDistParmException {
-		if(shape.value() <= 0) {
-			throw new ProbDistParmException("shape must be positive");
-		}
-		if(rate.value() <= 0) {
-			throw new ProbDistParmException("rate must be positive");
-		}
-	}
-	
-	protected Gamma getGammaGen() {
-		return this.gammaGen;
-	}
-	
-	private Double0D getShape() {
-		return shape;
-	}
-	
-	private Double0D getRate() {
-		return rate;
-	}	
 
-	private void setUpFromParms() {
-		if (this.getGammaGen() == null) {
-			this.gammaGen = new Gamma(this.getShape().value(), this.getRate().value(), RandomEngineSelector.getEngine());
+	public void setParms(Double0D shape, Double0D rate, boolean checkParms) {
+		this.shape = shape;
+		this.rate = rate;
+		this.setUpFromParms(checkParms);
+		this.initialized = true;
+	}
+
+	public void setParms(Double0D shape, Double0D rate) {
+		this.setParms(shape, rate, CHECK_PARMS);
+	}
+
+	private void checkParms() {
+		if (this.shape.value() <= 0) {
+			throw new IllegalArgumentException("shape must be positive");
+		}
+		if (this.rate.value() <= 0) {
+			throw new IllegalArgumentException("rate must be positive");
+		}
+	}
+
+	private void setUpFromParms(boolean checkParms) {
+		if (checkParms) {
+			this.checkParms();
+		}
+		if (this.gammaGen == null) {
+			this.gammaGen = new Gamma(this.shape.value(), this.rate.value(),
+					RandomEngineSelector.getEngine());
 		} else {
-			this.getGammaGen().setState(this.getShape().value(), this.getRate().value());
+			this.gammaGen.setState(this.shape.value(), this.rate.value());
 		}
 	}
 
 	@Override
 	protected double getDensity(Double0D pt) {
-		return this.getGammaGen().pdf(pt.value());
-	}	
-	
+		return this.gammaGen.pdf(pt.value());
+	}
+
 	public double getLogDensity(Double0D pt) {
 		return Math.log(this.getDensity(pt));
 	}
-	
+
 	@Override
-	protected Double0D genVariate() throws ProbDistParmException {
-		assert this.initialized;
-		return new Double0D(this.getGammaGen().nextDouble());
+	protected Double0D genVariate() {
+		return new Double0D(this.gammaGen.nextDouble());
 	}
 }

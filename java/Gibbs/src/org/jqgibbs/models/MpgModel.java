@@ -20,7 +20,7 @@ import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.BetaDist;
 import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByK;
-import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByP;
+import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.IIDDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
@@ -818,7 +818,7 @@ public class MpgModel extends Model {
 		protected Double1D postProb;
 		private Double1D postMu;
 		private Double2D postSg;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private MVNormalDist mvnDist;
 		private HashMap<Integer0D,MVNormalDist> mvnDists; // Shouldn't you be using (and hacking) SeqProbDist for this? FIXME
 
@@ -852,7 +852,7 @@ public class MpgModel extends Model {
 
 		protected Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostProb());
 				return this.catDist.variate();
 			} else {
@@ -1378,7 +1378,7 @@ public class MpgModel extends Model {
 		private Double1D postProb;
 		private Double1D postMu;
 		private Double2D postSg;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private MVNormalDist mvnDist;
 		private HashMap<Integer0D,MVNormalDist> mvnDists;
 		
@@ -1388,7 +1388,7 @@ public class MpgModel extends Model {
 
 		private Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostProb());
 				return this.catDist.variate();
 			} else {
@@ -1977,7 +1977,7 @@ public class MpgModel extends Model {
 				(Double0D) this.getHyper("ala"), (Double0D) this
 						.getHyper("alb")) {
 			private GammaDist gammaDist;
-			private CategoricalDistInitializeByP catDist;
+			private CategoricalDist catDist;
 			private Double0D postAlA;
 			private Double0D postAlB;
 			private Double1D postMix;
@@ -2022,7 +2022,7 @@ public class MpgModel extends Model {
 
 			private Integer0D catVariate() throws ProbDistParmException {
 				if (this.catDist == null) {
-					this.catDist = new CategoricalDistInitializeByP(this
+					this.catDist = new CategoricalDist(this
 							.getPostMix());
 					return this.catDist.variate();
 				} else {

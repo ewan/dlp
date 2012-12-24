@@ -19,7 +19,7 @@ import org.jqgibbs.mathstat.ListSequence;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.BetaDist;
-import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByP;
+import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
@@ -696,7 +696,7 @@ public class FLGFBModel extends Model {
 		}
 
 		protected Double1D postProb;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private HashMap<Integer0D,MVNormalDist> mvnDists; // Shouldn't you be using (and hacking) SeqProbDist for this? FIXME
 
 		private ProbDist<Double2D> baseSg;
@@ -720,7 +720,7 @@ public class FLGFBModel extends Model {
 
 		protected Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostProb());
 				return this.catDist.variate();
 			} else {
@@ -1149,7 +1149,7 @@ public class FLGFBModel extends Model {
 	
 	class PostAlDist extends ProbDistInitializeByChain<Double0D> {
 		private GammaDist gammaDist;
-		private CategoricalDistInitializeByP catDist;
+		private CategoricalDist catDist;
 		private Double0D postAlA;
 		private Double0D postAlB;
 		private Double1D postMix;
@@ -1198,7 +1198,7 @@ public class FLGFBModel extends Model {
 		
 		private Integer0D catVariate() throws ProbDistParmException {
 			if (this.catDist == null) {
-				this.catDist = new CategoricalDistInitializeByP(this
+				this.catDist = new CategoricalDist(this
 						.getPostMix());
 				return this.catDist.variate();
 			} else {

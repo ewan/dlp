@@ -17,7 +17,7 @@ import org.jqgibbs.mathstat.ListSequence;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.BetaDist;
-import org.jqgibbs.mathstat.probdist.CategoricalDistInitializeByP;
+import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.IIDDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
@@ -349,7 +349,7 @@ public class MpgJModel extends MpgFModel {
 
 		private Integer1D catVariates() throws ProbDistParmException {
 			if (this.catDists == null) {
-				CategoricalDistInitializeByP catDist = new CategoricalDistInitializeByP(this.getPi());
+				CategoricalDist catDist = new CategoricalDist(this.getPi());
 				this.catDists = new IIDDist<Integer1D,Integer0D>(catDist, this.getBes().size());
 			}
 //			else {
@@ -730,7 +730,7 @@ public class MpgJModel extends MpgFModel {
 		CPJDist postZ = new CPJDist((Double2D) this.getHyper("p0"),
 				(Integer0D) this.getHyper("k0"), (Double0D) this.getHyper("nuba"),
 				(Double0D) this.getHyper("nubb")); // FIXME -- Hack!
-		postZ.setBaseL(new CategoricalDistInitializeByP());
+		postZ.setBaseL(new CategoricalDist());
 		postZ.setBaseSg(new InverseWishartDist()); // FIXME -- Eek! Hack!
 		postZ.setBaseMu(new MVNormalDist()); // FIXME -- Eek! Hack!
 		postZ.setBaseBe(new MVNormalDist()); // FIXME -- Eek! Hack!
