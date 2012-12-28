@@ -5,77 +5,39 @@ import java.util.List;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
-import org.jqgibbs.mathstat.Numeric;
-
-import cern.jet.stat.Gamma;
 
 public class InverseWishartDist extends ProbDist<Double2D> {
 
-	private static InverseWishartDist staticIWDist;
+	private static InverseWishartDist staticIWDist = new InverseWishartDist();
 
-	private WishartDist wishartDist;
+	private WishartDist wishartDist = new WishartDist();
 	private Double2D Psi;
-	private Double0D K;
+	private Double0D k;
+	private int p;
 
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 2) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double2D) parms[0], (Double0D) parms[1]);
-		}
+	private double logNormConst;
+
+	public InverseWishartDist() {
+		super();
 	}
 
-	public static Double3D variates(List<Double2D> postPsi,
-			List<Double0D> postKappa) {
-		Double3D sequence = new Double3D();
-		int i;
-		if (InverseWishartDist.staticIWDist == null) {
-			InverseWishartDist.staticIWDist = new InverseWishartDist(
-					postPsi.get(0), postKappa.get(0));
-			sequence.add(InverseWishartDist.staticIWDist.variate());
-			i = 1;
-		} else {
-			i = 0;
-		}
-		for (; i < postPsi.size(); i++) {
-			sequence.add(InverseWishartDist.staticIWDist.variate(
-					postPsi.get(i), postKappa.get(i)));
-		}
-		return sequence;
+	public InverseWishartDist(Double2D Psi, Double0D k, boolean checkParms) {
+		this.setParms(Psi, k);
 	}
 
-	public InverseWishartDist(Double2D Psi, Double0D K, boolean checkParms) {
-		this.setParms(Psi, K);
+	public InverseWishartDist(Double2D Psi, Double0D k) {
+		this(Psi, k, CHECK_PARMS);
 	}
 
-	public InverseWishartDist(Double2D Psi, Double0D K) {
-		this(Psi, K, CHECK_PARMS);
-	}
-
-	public void setParms(Double2D Psi, Double0D K, boolean checkParms) {
+	public void setParms(Double2D Psi, Double0D k, boolean checkParms) {
 		this.Psi = Psi;
-		this.K = K;
+		this.k = k;
 		this.setUpFromParms(checkParms);
 		this.initialized = true;
 	}
 
-	public void setParms(Double2D Psi, Double0D K) {
-		this.setParms(Psi, K, CHECK_PARMS);
-	}
-
-	private void setUpFromParms(boolean checkParms) {
-		if (checkParms) {
-			this.checkParms();
-		}
-		if (this.wishartDist == null) {
-			this.wishartDist = new WishartDist(this.Psi.inverse(), this.K,
-					checkParms);
-		} else {
-			this.wishartDist.setParms(this.Psi.inverse(), this.K, checkParms);
-		}
+	public void setParms(Double2D Psi, Double0D k) {
+		this.setParms(Psi, k, CHECK_PARMS);
 	}
 
 	private void checkParms() {
@@ -83,37 +45,41 @@ public class InverseWishartDist extends ProbDist<Double2D> {
 		// Remaining checks will be done inside WishartDist
 	}
 
+	private void setUpFromParms(boolean checkParms) {
+		if (checkParms) {
+			this.checkParms();
+		}
+		this.p = this.Psi.numRows();
+
+		this.wishartDist.setParms(this.Psi.inverse(), this.k, checkParms);
+
+		this.logNormConst = (this.k.value() / 2)
+				* (p * Math.log(2) - Math.log(this.Psi.det()));
+		this.logNormConst += WishartDist.logMvGamma(p, this.k.value() / 2);
+	}
+
 	@Override
 	protected Double2D genVariate() {
-		assert this.initialized;
 		Double2D W = this.wishartDist.variate();
 		return W.inverse();
 	}
 
-	@Override
-	protected double getDensity(Double2D pt) {
-		throw new UnsupportedOperationException("Too lazy, come back later");
+	public static Double3D variates(List<Double2D> postPsi,
+			List<Double0D> postKappa) {
+		Double3D sequence = new Double3D();
+		for (int i = 0; i < postPsi.size(); i++) {
+			InverseWishartDist.staticIWDist.setParms(postPsi.get(i),
+					postKappa.get(i));
+			sequence.add(InverseWishartDist.staticIWDist.variate());
+		}
+		return sequence;
 	}
 
-	public double getLogDensity(Double2D pt) {
-		int d = this.Psi.numCols();
-		double k = this.K.value();
-		double ld = -k * d * Math.log(2) / 2;
-		double detPt = Math.pow(pt.det(), (k + d + 1) / 2);
-		double detPsi = Math.pow(this.Psi.det(), k / 2);
-		double gamK2 = 0;
-		double a = k / 2;
-		for (int i = d; i > 1; i--) {
-			gamK2 += Math.log(Math.pow(Math.PI, ((double) i - 1) / 2));
-			gamK2 += Math.log(Gamma.gamma(a));
-			a -= 0.5;
-		}
-		gamK2 += Math.log(Gamma.gamma(a));
-		ld -= Math.log(detPt);
-		ld += Math.log(detPsi);
-		ld -= gamK2;
-		Double2D PsiPtInv = this.Psi.mult(pt.inverse());
-		ld -= 0.5 * PsiPtInv.trace().value();
-		return ld;
+	@Override
+	protected double getLogDensity(Double2D X) {
+		return -0.5
+				* (this.Psi.mult(X.inverse()).trace().value() + (this.k.value()
+						+ this.p + 1)
+						* Math.log(X.det())) - this.logNormConst;
 	}
 }

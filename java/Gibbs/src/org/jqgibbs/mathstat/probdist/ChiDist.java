@@ -3,26 +3,20 @@ package org.jqgibbs.mathstat.probdist;
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Integer0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.ChiSquare;
+import cern.jet.stat.Gamma;
 
 public class ChiDist extends ProbDist<Double0D> {
 
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 1) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Integer0D) parms[0]);
-		}
-	}
-
 	private Integer0D dof;
-
 	private ChiSquare chisqGen;
+
+	private double logNormConst;
+
+	public ChiDist() {
+		super();
+	}
 
 	public ChiDist(Integer0D dof, boolean checkParms) {
 		this.setParms(dof, checkParms);
@@ -58,6 +52,8 @@ public class ChiDist extends ProbDist<Double0D> {
 		} else {
 			this.chisqGen.setState(this.dof.value());
 		}
+		this.logNormConst = Gamma.logGamma(this.dof.value() / 2)
+				- (1 - this.dof.value() / 2) * Math.log(2);
 	}
 
 	@Override
@@ -66,7 +62,9 @@ public class ChiDist extends ProbDist<Double0D> {
 	}
 
 	@Override
-	protected double getDensity(Double0D pt) {
-		throw new UnsupportedOperationException("Too lazy, come back later");
+	protected double getLogDensity(Double0D pt) {
+		double x = pt.value();
+		return (this.dof.value() - 1) * Math.log(x) - Math.pow(x, 2) / 2
+				- this.logNormConst;
 	}
 }

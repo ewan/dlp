@@ -7,7 +7,6 @@ import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.mathstat.RandomVar;
-import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
 public abstract class Model {
 	protected Map<String, RandomVar<? extends Numeric>> params;
@@ -18,7 +17,7 @@ public abstract class Model {
 		super();
 	}
 	
-	public Model(Map<String, Numeric> hypers, int dims) throws ProbDistParmException {
+	public Model(Map<String, Numeric> hypers, int dims) {
 		this.hypers = hypers;
 		this.dims = dims;
 	}
@@ -36,7 +35,7 @@ public abstract class Model {
 		return this.hypers.get(hyperName);
 	}
 
-	public ChainLink getChainLink(Double1D v, Map<String, Integer1D> paramIndices) throws GibbsException {
+	public ChainLink getChainLink(Double1D v, Map<String, Integer1D> paramIndices) {
 		ChainLink cl = new ChainLink();
 		int[] indices;
 		Double1D values;

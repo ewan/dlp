@@ -3,19 +3,13 @@ package org.jqgibbs.mathstat.probdist;
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
-import org.jqgibbs.mathstat.Numeric;
 
 import umontreal.iro.lecuyer.probdistmulti.MultiNormalDist;
 import umontreal.iro.lecuyer.randvar.NormalGen;
 import umontreal.iro.lecuyer.randvarmulti.MultinormalCholeskyGen;
-import umontreal.iro.lecuyer.rng.BasicRandomStreamFactory;
-import umontreal.iro.lecuyer.rng.MRG32k3a;
 import umontreal.iro.lecuyer.rng.RandomStream;
-import umontreal.iro.lecuyer.rng.RandomStreamFactory;
 
 public class MVNormalDist extends ProbDist<Double1D> {
-
-	private static double log2Pi = Math.log(2 * Math.PI);
 
 	private NormalGen normalGen;
 	private MultinormalCholeskyGen mvnGen;
@@ -24,24 +18,13 @@ public class MVNormalDist extends ProbDist<Double1D> {
 	private Double1D mu;
 	private Double2D Sg;
 
-	private double logDetSg;
 	private Double2D SgInv;
 
 	private int p;
-
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 2) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double1D) parms[0], (Double2D) parms[1]);
-		}
-	}
-
+	private double logNormConst;
+	
 	public MVNormalDist() {
-		// Empty (fix?)
+		super();
 	}
 
 	public MVNormalDist(Double1D mu, Double2D Sg, boolean checkParms) {
@@ -90,8 +73,9 @@ public class MVNormalDist extends ProbDist<Double1D> {
 			this.mvnGen.setSigma(this.Sg.toColt());
 			this.mvnDist.setParams(this.mu.value(), this.Sg.value());
 		}
-		this.logDetSg = Math.log(this.Sg.det());
 		this.SgInv = this.Sg.inverse();
+		
+		this.logNormConst = 0.5*(Math.log(this.Sg.det()) + this.p*NormalDist.log2Pi);
 	}
 
 	@Override
@@ -100,28 +84,24 @@ public class MVNormalDist extends ProbDist<Double1D> {
 		this.mvnGen.nextPoint(pt);
 		return new Double1D(pt);
 	}
-
+	
 	@Override
-	protected double getDensity(Double1D pt) {
-		return this.mvnDist.density(pt.value());
-	}
-
-	@Override
-	protected double getLogDensity(Double1D pt) {
-		Double1D dev = pt.minus(this.mu);
-		double mahal = dev.mult(this.SgInv).mult(dev);
-		if (Double.isInfinite(mahal)) {
+	protected double getLogDensity(Double1D x) {
+		Double1D dev = x.minus(this.mu);
+		double scaledDist2 = dev.mult(this.SgInv).mult(dev);
+		// FIXME
+		if (Double.isInfinite(scaledDist2)) {
 			System.err.println("Warning: infinite Mahalanobis distance");
 			return -Double.MAX_VALUE;
 		}
-		if (Double.isNaN(mahal)) {
+		if (Double.isNaN(scaledDist2)) {
 			System.err.println("Warning: NaN Mahalanobis distance");
-			System.err.println("pt: " + pt);
+			System.err.println("x: " + x);
 			System.err.println("dev: " + dev);
 			System.err.println("mu: " + this.mu);
 			System.err.println("sg: " + this.Sg);
 			System.err.println("sgInv: " + this.SgInv);
 		}
-		return -0.5 * (this.p * MVNormalDist.log2Pi + this.logDetSg + mahal);
+		return -0.5*scaledDist2 - this.logNormConst;
 	}
 }

@@ -23,7 +23,7 @@ import org.jqgibbs.mathstat.probdist.IIDDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.models.MpgModel.PostBDist;
@@ -340,7 +340,7 @@ public class MpgJModel extends MpgFModel {
 		}
 	}
 
-	class PriorLDist extends ProbDistInitializeByChain<Integer1D> {
+	class PriorLDist extends ProbDistMC<Integer1D> {
 		private IIDDist<Integer1D,Integer0D> catDists;
 //		
 		public PriorLDist(Numeric<?>... fixed) throws ProbDistParmException {
@@ -415,7 +415,7 @@ public class MpgJModel extends MpgFModel {
 		}
 	}
 	
-	class PostNuBDist extends ProbDistInitializeByChain<Double0D> {
+	class PostNuBDist extends ProbDistMC<Double0D> {
 		private GammaDist gammaDist;
 		private Double0D postNuBA;
 		private Double0D postNuBB;
@@ -547,7 +547,7 @@ public class MpgJModel extends MpgFModel {
 		}
 	}
 	
-	class PostPiDist extends ProbDistInitializeByChain<Double0D> {
+	class PostPiDist extends ProbDistMC<Double0D> {
 		private BetaDist betaDist;
 		private PriorLDist lDist;
 		private Double0D postPiA;

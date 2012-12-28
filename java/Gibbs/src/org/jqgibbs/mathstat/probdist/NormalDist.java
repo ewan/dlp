@@ -2,7 +2,6 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Normal;
 import cern.jet.random.engine.RandomEngine;
@@ -17,25 +16,18 @@ import cern.jet.random.engine.RandomEngine;
  */
 public class NormalDist extends ProbDist<Double0D> {
 
+	public static final double log2Pi = Math.log(2*Math.PI);
+	
 	private RandomEngine randomEngine;
 	private Normal normalGen;
 
 	private Double0D mu;
 	private Double0D sg;
+	
+	private double logNormConst;
 
-	/**
-	 * @review note that this function (which is already supposed to be
-	 *         reworked/removed anyway) never uses the checkParms flag
-	 */
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 2) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double0D) parms[0], (Double0D) parms[1]);
-		}
+	public NormalDist() {
+		super();
 	}
 
 	public NormalDist(Double0D mu, Double0D sg, boolean checkParms) {
@@ -73,9 +65,9 @@ public class NormalDist extends ProbDist<Double0D> {
 			this.normalGen = new Normal(this.mu.value(), this.sg.value(),
 					this.randomEngine);
 		} else {
-			assert this.randomEngine != null;
 			this.normalGen.setState(this.mu.value(), this.sg.value());
 		}
+		this.logNormConst = 0.5*NormalDist.log2Pi + Math.log(this.sg.value());
 	}
 
 	@Override
@@ -84,7 +76,7 @@ public class NormalDist extends ProbDist<Double0D> {
 	}
 
 	@Override
-	protected double getDensity(Double0D pt) {
-		throw new UnsupportedOperationException("Too lazy, come back later");
+	protected double getLogDensity(Double0D x) {
+		return -0.5*x.minus(this.mu).divide(this.sg).pow(2).value() - this.logNormConst;
 	}
-}
+} 

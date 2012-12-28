@@ -26,7 +26,7 @@ import org.jqgibbs.mathstat.probdist.IIDDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
@@ -42,7 +42,7 @@ public class MpgModel extends Model {
 		return this.dims;
 	}
 	
-	class PriorMuDist extends ProbDistInitializeByChain<Double2D> {
+	class PriorMuDist extends ProbDistMC<Double2D> {
 		private ListSequence<Double1D> mu0Seq;
 		private ListSequence<Double2D> priorSgs;
 
@@ -148,7 +148,7 @@ public class MpgModel extends Model {
 		}
 	}	
 	
-	class PostMuDist extends ProbDistInitializeByChain<Double2D> {
+	class PostMuDist extends ProbDistMC<Double2D> {
 		private ListSequence<Double1D> postMus;
 		private ListSequence<Double2D> postSgs;
 		private SeqMVNormalDist mvnDists;
@@ -296,7 +296,7 @@ public class MpgModel extends Model {
 		}
 	}
 	
-	class PriorBeDist extends ProbDistInitializeByChain<Double2D> {
+	class PriorBeDist extends ProbDistMC<Double2D> {
 		private ListSequence<Double1D> be0Seq;
 		private ListSequence<Double2D> priorSgs;
 		
@@ -402,7 +402,7 @@ public class MpgModel extends Model {
 		}
 	}
 
-	class PostBeDist extends ProbDistInitializeByChain<Double2D> {
+	class PostBeDist extends ProbDistMC<Double2D> {
 		private ListSequence<Double1D> postMus;
 		private ListSequence<Double2D> postSgs;
 		private SeqMVNormalDist mvnDists;
@@ -537,7 +537,7 @@ public class MpgModel extends Model {
 		}
 	}	
 	
-	class PriorSgDist extends ProbDistInitializeByChain<Double3D> {
+	class PriorSgDist extends ProbDistMC<Double3D> {
 		private SeqInverseWishartDist iwDists;
 		private ListSequence<Double2D> p0Seq;
 		private ListSequence<Integer0D> k0Seq;
@@ -632,7 +632,7 @@ public class MpgModel extends Model {
 		}
 	}	
 
-	class PostSgDist extends ProbDistInitializeByChain<Double3D> {
+	class PostSgDist extends ProbDistMC<Double3D> {
 		private ListSequence<Double2D> postPs;
 		private ListSequence<Integer0D> postKs;
 		private SeqInverseWishartDist iwDists;
@@ -810,7 +810,7 @@ public class MpgModel extends Model {
 		}
 	}	
 	
-	class CPDist extends ProbDistInitializeByChain<Integer1D> {
+	class CPDist extends ProbDistMC<Integer1D> {
 		public CPDist(Numeric<?>... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
@@ -1093,7 +1093,7 @@ public class MpgModel extends Model {
 		}
 	}	
 	
-	class PostBe0Dist extends ProbDistInitializeByChain<Double1D> {
+	class PostBe0Dist extends ProbDistMC<Double1D> {
 		protected MVNormalDist mvnDist;
 		protected Double1D sg0InvB0;
 		protected Double2D sg0Inv;
@@ -1242,7 +1242,7 @@ public class MpgModel extends Model {
 		}
 	}
 	
-	class PostNuBDist extends ProbDistInitializeByChain<Double0D> {
+	class PostNuBDist extends ProbDistMC<Double0D> {
 		private GammaDist gammaDist;
 		private Double0D postNuBA;
 		private Double0D postNuBB;
@@ -1374,7 +1374,7 @@ public class MpgModel extends Model {
 		}
 	}
 	
-	class PostBDist extends ProbDistInitializeByChain<Integer1D> {
+	class PostBDist extends ProbDistMC<Integer1D> {
 		private Double1D postProb;
 		private Double1D postMu;
 		private Double2D postSg;
@@ -1609,7 +1609,7 @@ public class MpgModel extends Model {
 		// num
 		ProbDist<Double0D> priorNuM = new GammaDist((Double0D) this
 				.getHyper("numa"), (Double0D) this.getHyper("numb"));
-		ProbDistInitializeByChain<Double0D> postNuM = new ProbDistInitializeByChain<Double0D>(
+		ProbDistMC<Double0D> postNuM = new ProbDistMC<Double0D>(
 				(Double0D) this.getHyper("numa"), (Double0D) this
 						.getHyper("numb")) {
 			private GammaDist gammaDist;
@@ -1743,7 +1743,7 @@ public class MpgModel extends Model {
 		// mu0
 		ProbDist<Double1D> priorMu0 = new MVNormalDist((Double1D) this
 				.getHyper("m0"), (Double2D) this.getHyper("sm0"));
-		ProbDistInitializeByChain<Double1D> postMu0 = new ProbDistInitializeByChain<Double1D>(
+		ProbDistMC<Double1D> postMu0 = new ProbDistMC<Double1D>(
 				(Double1D) this.getHyper("m0"), (Double2D) this.getHyper("sm0")) {
 			private MVNormalDist mvnDist;
 			private Double1D sg0InvM0;
@@ -1893,7 +1893,7 @@ public class MpgModel extends Model {
 		// x
 		ProbDist<Double0D> priorX = new BetaDist(
 				(Double0D) this.getHyper("xa"), (Double0D) this.getHyper("xb"));
-		ProbDistInitializeByChain<Double0D> postX = new ProbDistInitializeByChain<Double0D>() {
+		ProbDistMC<Double0D> postX = new ProbDistMC<Double0D>() {
 			private BetaDist betaDist;
 			private Double0D postXA;
 			private Double0D postXB;
@@ -1973,7 +1973,7 @@ public class MpgModel extends Model {
 		// al
 		ProbDist<Double0D> priorAl = new GammaDist((Double0D) this
 				.getHyper("ala"), (Double0D) this.getHyper("alb"));
-		ProbDistInitializeByChain<Double0D> postAl = new ProbDistInitializeByChain<Double0D>(
+		ProbDistMC<Double0D> postAl = new ProbDistMC<Double0D>(
 				(Double0D) this.getHyper("ala"), (Double0D) this
 						.getHyper("alb")) {
 			private GammaDist gammaDist;

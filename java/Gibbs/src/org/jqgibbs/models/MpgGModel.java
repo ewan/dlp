@@ -14,7 +14,7 @@ import org.jqgibbs.mathstat.RandomVar;
 import org.jqgibbs.mathstat.probdist.CategoricalDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
@@ -27,7 +27,7 @@ public class MpgGModel extends MpgFModel {
 		
 		
 		ProbDist<Double0D> priorNuB = new Deterministic<Double0D>(init.get("nub"));
-		ProbDistInitializeByChain<Double0D> postNuB = new ProbDistInitializeByChain<Double0D>() {
+		ProbDistMC<Double0D> postNuB = new ProbDistMC<Double0D>() {
 			private Double0D getNuB() {
 				return (Double0D) this.chainParms[0];
 			}

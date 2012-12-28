@@ -5,51 +5,34 @@ import java.util.List;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
-import org.jqgibbs.mathstat.Numeric;
 
 public class MatrixNormalDist extends ProbDist<Double2D> {
 
-	private static MatrixNormalDist staticMNDist;
+	private static MatrixNormalDist staticMNDist = new MatrixNormalDist();
 
-	private MVNormalDist mvnDist;
+	private MVNormalDist mvnDist = new MVNormalDist();
 	private Double2D M;
 	private Double2D Sg;
 	private Double2D Omega;
-	private int h;
+	private Double2D SgInv;
+	private Double2D OmegaInv;
+	private int pOmega;
+	private int pSg;
 	private Double1D vecM;
 	private Double2D kronSg;
-
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 3) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double2D) parms[0], (Double2D) parms[1],
-					(Double2D) parms[2]);
-		}
-	}
+	
+	private double logNormConst;
 
 	public static Double3D variates(List<Double2D> RepM, Double3D ActiveSg,
 			List<Double2D> Omega) {
 		boolean singleOmega = Omega.size() < RepM.size(); // using constant
-															// Omega across
-															// entries
+															// Omega
 		Double3D sequence = new Double3D();
 
-		int i;
-		if (MatrixNormalDist.staticMNDist == null) {
-			MatrixNormalDist.staticMNDist = new MatrixNormalDist(RepM.get(0),
-					ActiveSg.get(0), Omega.get(0));
+		for (int i = 0; i < RepM.size(); i++) {
+			MatrixNormalDist.staticMNDist.setParms(RepM.get(i),
+					ActiveSg.get(i), Omega.get(singleOmega ? 0 : i));
 			sequence.add(MatrixNormalDist.staticMNDist.variate());
-			i = 1;
-		} else {
-			i = 0;
-		}
-		for (; i < RepM.size(); i++) {
-			sequence.add(MatrixNormalDist.staticMNDist.variate(RepM.get(i),
-					ActiveSg.get(i), Omega.get(singleOmega ? 0 : i)));
 		}
 		return sequence;
 	}
@@ -63,9 +46,8 @@ public class MatrixNormalDist extends ProbDist<Double2D> {
 		this(M, Sg, Omega, CHECK_PARMS);
 	}
 
-	public MatrixNormalDist() throws ProbDistParmException {
-		// this(new Double2D(), new Double2D(), new Double2D());
-		// Empty (fix?)
+	public MatrixNormalDist() {
+		super();
 	}
 
 	public void setParms(Double2D M, Double2D Sg, Double2D Omega,
@@ -105,36 +87,41 @@ public class MatrixNormalDist extends ProbDist<Double2D> {
 		if (checkParms) {
 			this.checkParms();
 		}
-		this.h = this.M.numRows();
+		this.pOmega = this.M.numRows();
+		this.pSg = this.M.numCols();
 		this.vecM = this.M.colVec();
 		this.kronSg = this.Sg.kron(this.Omega);
+		this.mvnDist.setParms(this.vecM, this.kronSg);
+		this.SgInv = this.Sg.inverse();
+		this.OmegaInv = this.Omega.inverse();
+		
+		this.logNormConst = 0.5*(this.pOmega*this.pSg*NormalDist.log2Pi + this.pOmega*Math.log(this.Sg.det()) + this.pSg*Math.log(this.Omega.det()));
 	}
 
 	@Override
 	protected Double2D genVariate() {
-		Double1D vecVariate;
-		if (this.mvnDist == null) {
-			this.mvnDist = new MVNormalDist(this.vecM, this.kronSg);
-			vecVariate = this.mvnDist.variate();
-		} else {
-			vecVariate = this.mvnDist.variate(this.vecM, this.kronSg);
-		}
-		return vecVariate.toDouble2D(this.h);
+		return this.mvnDist.variate().toDouble2D(this.pOmega);
 	}
-
+	
 	@Override
-	protected double getDensity(Double2D pt) {
-		if (this.mvnDist == null) {
-			this.mvnDist = new MVNormalDist(this.vecM, this.kronSg);
+	protected double getLogDensity(Double2D X) {
+		Double2D Dev = X.minus(this.M);
+		double scaledDist2 = this.SgInv.mult(Dev).mult(this.OmegaInv).mult(Dev).trace().value();
+		// FIXME
+		if (Double.isInfinite(scaledDist2)) {
+			System.err.println("Warning: infinite scaled distance");
+			return -Double.MAX_VALUE;
 		}
-		return this.mvnDist.getDensity(pt.colVec());
-	}
-
-	@Override
-	protected double getLogDensity(Double2D pt) {
-		if (this.mvnDist == null) {
-			this.mvnDist = new MVNormalDist(this.vecM, this.kronSg);
-		}
-		return this.mvnDist.getLogDensity(pt.colVec());
+		if (Double.isNaN(scaledDist2)) {
+			System.err.println("Warning: NaN scaled distance");
+			System.err.println("X: " + X);
+			System.err.println("Dev: " + Dev);
+			System.err.println("M: " + this.M);
+			System.err.println("Sg: " + this.Sg);
+			System.err.println("SgInv: " + this.SgInv);
+			System.err.println("Omega: " + this.Omega);
+			System.err.println("OmegaInv: " + this.OmegaInv);
+		}		
+		return -0.5*scaledDist2 - this.logNormConst;
 	}
 }

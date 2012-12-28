@@ -1,9 +1,8 @@
 package org.jqgibbs.mathstat;
 
 import org.jqgibbs.ChainLink;
-import org.jqgibbs.SamplerData;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistParmException;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 
 /*
  * It would be *really* nice if we could implement value() such that it returns
@@ -26,50 +25,36 @@ import org.jqgibbs.mathstat.probdist.ProbDistParmException;
  *   
  */
 
-public class RandomVar<T extends Numeric> implements Numeric {
+public class RandomVar<T extends Numeric> {
 	private String name;
-	private ProbDist<T> posterior;
+	private ProbDistMC<T> posterior;
 	private T numericValue;
 
-	public RandomVar(String name, ProbDist<T> posterior, T t) {
-		this.setName(name);
-		this.setPosterior(posterior);
-		this.setNumericValue(t);
+	public RandomVar(String name, ProbDistMC<T> posterior, T t) {
+		this.name = name;
+		this.posterior = posterior;
+		this.numericValue = t;
 	}
 
-	public void updatePosterior(ChainLink l, Double2D d)
-			throws ProbDistParmException {
-		this.setNumericValue(this.getPosterior().variate(l, d));
+	public void updatePosterior(ChainLink l) {
+		this.numericValue = this.posterior.variate(l);
 	}
 
-	public RandomVar<T> samplePosterior(ChainLink l, SamplerData d)
-			throws ProbDistParmException {
-		T t = this.getPosterior().variate(l, d);
+	public RandomVar<T> samplePosterior(ChainLink l) {
+		T t = this.posterior.variate(l);
 		return this.cloneWith(t);
 	}
 
 	public RandomVar<T> cloneWith(T t) {
-		return new RandomVar<T>(this.getName(), this.getPosterior(), t);
+		return new RandomVar<T>(this.name, this.posterior, t);
 	}
 
 	public String getName() {
 		return this.name;
 	}
-
-	protected void setNumericValue(T numericValue) {
-		this.numericValue = numericValue;
-	}
-
+	
 	public T getNumericValue() {
 		return numericValue;
-	}
-
-	protected void setName(String name) {
-		this.name = name;
-	}
-
-	protected void setPosterior(ProbDist<T> posterior) {
-		this.posterior = posterior;
 	}
 
 	public ProbDist<T> getPosterior() {
@@ -78,52 +63,43 @@ public class RandomVar<T extends Numeric> implements Numeric {
 
 	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException {
-		RandomVar<T> clone = new RandomVar<T>(this.getName(),
-				this.getPosterior(), (T) this.getNumericValue().clone());
+		RandomVar<T> clone = new RandomVar<T>(this.name,
+				this.posterior, (T) this.numericValue.clone());
 		return clone;
 	}
 
 	public RandomVar<T> cloneFromVector(Double1D v) {
-		T clone = (T) this.getNumericValue().cloneFromVector(v);
+		T clone = (T) this.numericValue.cloneFromVector(v);
 		return this.cloneWith(clone);
 	}
 
 	// @Override
 	public String toString() {
-		return this.getNumericValue().toString();
+		return this.numericValue.toString();
 		// return this.getName() + ": " + this.getNumericValue().toString();
 	}
 
-	@SuppressWarnings("unchecked")
-	// @Override
+	@Override
 	public boolean equals(Object o) {
 		if (!(this.getClass().isAssignableFrom(o.getClass()))) {
 			return false;
 		}
-		if (!(this.getName().equals(((RandomVar<T>) o).getName()))) {
-			// FIXME - how the hell do I do this?
+		if (!(this.name.equals(((RandomVar<T>) o).name))) {
 			return false;
 		}
-		return this.getNumericValue().equals(((RandomVar<T>) o).getNumericValue());
+		return this.numericValue.equals(((RandomVar<T>) o).numericValue);
 	}
 
-	// @Override
+	@Override
 	public int hashCode() {
-		return this.getName().hashCode() + this.getNumericValue().hashCode();
+		return this.name.hashCode() + this.numericValue.hashCode();
 	}
 
-	// @Override
 	public Double1D rowVec() {
-		return this.getNumericValue().rowVec();
+		return this.numericValue.rowVec();
 	}
 
-	// @Override
 	public int length1D() {
-		return this.getNumericValue().length1D();
-	}
-
-	public void updatePosteriorFast(ChainLink l, Double2D d)
-			throws ProbDistParmException {
-		this.setNumericValue(this.getPosterior().variateFast(l, d));
+		return this.numericValue.length1D();
 	}
 }

@@ -20,7 +20,7 @@ import org.jqgibbs.mathstat.probdist.IIDDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.mathstat.probdist.SeqInverseWishartDist;
@@ -41,7 +41,7 @@ public class ToyModel extends Model {
 		// Mu
 		ProbDist<Double1D> priorMu = new MVNormalDist((Double1D) this
 				.getHyper("m0"), (Double2D) this.getHyper("s0"));
-		ProbDistInitializeByChain<Double1D> postMu = new ProbDistInitializeByChain<Double1D>(
+		ProbDistMC<Double1D> postMu = new ProbDistMC<Double1D>(
 				(Double1D) this.getHyper("m0"), (Double2D) this.getHyper("s0")) {
 			private MVNormalDist mvnDist;
 			private Double1D sg0InvM0;
@@ -157,7 +157,7 @@ public class ToyModel extends Model {
 		// Sg
 		ProbDist<Double2D> priorSg = new InverseWishartDist((Double2D) this.getHyper("p0"),
 						(Integer0D) this.getHyper("k0"));
-		ProbDistInitializeByChain<Double2D> postSg = new ProbDistInitializeByChain<Double2D>(
+		ProbDistMC<Double2D> postSg = new ProbDistMC<Double2D>(
 				(Double2D) this.getHyper("p0"),
 				(Integer0D) this.getHyper("k0")) {
 			private InverseWishartDist iwDist;

@@ -4,7 +4,6 @@ import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Integer0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Empirical;
 import cern.jet.random.EmpiricalWalker;
@@ -12,9 +11,12 @@ import cern.jet.random.EmpiricalWalker;
 public class CategoricalDist extends ProbDist<Integer0D> {
 
 	private EmpiricalWalker empiricalGen;
-	protected Integer0D k;
 	protected Double1D p;
 
+	public CategoricalDist() {
+		super();
+	}
+	
 	public CategoricalDist(Double1D p, boolean checkParms) {
 		this.setParms(p, checkParms);
 	}
@@ -23,21 +25,7 @@ public class CategoricalDist extends ProbDist<Integer0D> {
 		this(p, CHECK_PARMS);
 	}
 
-	@Override
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 1) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double1D) parms[0]);
-		}
-	}
-
 	public void setParms(Double1D p, boolean checkParms) {
-		Integer0D k = new Integer0D(p.size());
-		this.k = k;
 		this.p = p;
 		this.setUpFromParms(checkParms);
 		this.initialized = true;
@@ -89,6 +77,11 @@ public class CategoricalDist extends ProbDist<Integer0D> {
 	@Override
 	protected double getDensity(Integer0D pt) {
 		return this.p.get(pt.value()).value();
+	}
+	
+	@Override
+	protected double getLogDensity(Integer0D pt) {
+		return Math.log(this.getDensity(pt));
 	}
 
 }

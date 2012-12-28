@@ -23,7 +23,7 @@ import org.jqgibbs.mathstat.probdist.GammaDist;
 import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 
@@ -338,7 +338,7 @@ public class MpgKModel extends MpgFModel {
 		}
 	}
 	
-	class PriorNuBsDist extends ProbDistInitializeByChain<Double1D> {
+	class PriorNuBsDist extends ProbDistMC<Double1D> {
 		private HashMap<Integer0D,GammaDist> gammaDists; // FIXME - again, this is the wrong way to do this
 		
 		public PriorNuBsDist(Numeric<?>... fixed) throws ProbDistParmException {
@@ -446,7 +446,7 @@ public class MpgKModel extends MpgFModel {
 		}
 	}
 	
-	class PostNuBsDist extends ProbDistInitializeByChain<Double1D> {
+	class PostNuBsDist extends ProbDistMC<Double1D> {
 		private HashMap<Integer0D,GammaDist> gammaDists; // FIXME - again, this is the wrong way to do this
 		private Double0D postNuBA;
 		private Double0D postNuBB;

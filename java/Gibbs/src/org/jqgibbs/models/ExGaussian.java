@@ -23,7 +23,7 @@ import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.NormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
@@ -34,7 +34,7 @@ import org.jqgibbs.models.FLGFAModel.PriorOmegaDist;
 
 public class ExGaussian extends Model {
 
-	class PriorYDist extends ProbDistInitializeByChain<Double1D> {
+	class PriorYDist extends ProbDistMC<Double1D> {
 		private GammaDist gammaDist;
 
 		public PriorYDist(Numeric... fixed) throws ProbDistParmException {
@@ -93,7 +93,7 @@ public class ExGaussian extends Model {
 		}
 	}
 
-	class PostYDist extends ProbDistInitializeByChain<Double1D> {
+	class PostYDist extends ProbDistMC<Double1D> {
 		private Double1D postM;
 		private Double0D postS;
 		private TruncatedNormalDist truncatedNormalDist;
@@ -186,7 +186,7 @@ public class ExGaussian extends Model {
 		}
 	}
 
-	class PostLambdaDist extends ProbDistInitializeByChain<Double0D> {
+	class PostLambdaDist extends ProbDistMC<Double0D> {
 		private Double0D postK;
 		private Double0D postTheta;
 		private GammaDist gammaDist;
@@ -275,7 +275,7 @@ public class ExGaussian extends Model {
 		}
 	}
 
-	class PriorMuDist extends ProbDistInitializeByChain<Double0D> {
+	class PriorMuDist extends ProbDistMC<Double0D> {
 		private NormalDist normalDist;
 
 		public PriorMuDist(Numeric... fixed) throws ProbDistParmException {
@@ -348,7 +348,7 @@ public class ExGaussian extends Model {
 		}
 	}
 
-	class PostMuDist extends ProbDistInitializeByChain<Double0D> {
+	class PostMuDist extends ProbDistMC<Double0D> {
 		private Double0D postM;
 		private Double0D postS;
 		private NormalDist normalDist;
@@ -451,7 +451,7 @@ public class ExGaussian extends Model {
 		}
 	}
 
-	class PostSigmaDist extends ProbDistInitializeByChain<Double0D> {
+	class PostSigmaDist extends ProbDistMC<Double0D> {
 		private Double0D postK;
 		private Double0D postTheta;
 		private GammaDist gammaDist;

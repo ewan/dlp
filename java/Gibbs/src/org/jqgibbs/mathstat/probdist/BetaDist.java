@@ -2,27 +2,22 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Beta;
+import cern.jet.stat.Gamma;
 
 public class BetaDist extends ProbDist<Double0D> {
 	private Double0D shape1;
 	private Double0D shape2;
 
+	private double logNormConst;
+
 	private Beta betaGen;
 
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 2) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double0D) parms[0], (Double0D) parms[1]);
-		}
+	public BetaDist() {
+		super();
 	}
-
+	
 	public BetaDist(Double0D shape1, Double0D shape2, boolean checkParms) {
 		this.setParms(shape1, shape2, checkParms);
 	}
@@ -61,6 +56,8 @@ public class BetaDist extends ProbDist<Double0D> {
 		} else {
 			this.betaGen.setState(this.shape1.value(), this.shape2.value());
 		}
+		this.logNormConst = Math.log(Gamma.beta(this.shape1.value(),
+				this.shape2.value()));
 	}
 
 	@Override
@@ -69,7 +66,9 @@ public class BetaDist extends ProbDist<Double0D> {
 	}
 
 	@Override
-	protected double getDensity(Double0D pt) {
-		throw new UnsupportedOperationException("Too lazy, come back later");
+	protected double getLogDensity(Double0D pt) {
+		return (this.shape1.value() - 1) * Math.log(pt.value())
+				+ (this.shape2.value() - 1) * Math.log(1 - pt.value())
+				- this.logNormConst;
 	}
 }

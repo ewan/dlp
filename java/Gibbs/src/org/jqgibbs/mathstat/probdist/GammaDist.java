@@ -2,7 +2,6 @@ package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double0D;
-import org.jqgibbs.mathstat.Numeric;
 
 import cern.jet.random.Gamma;
 
@@ -10,17 +9,12 @@ public class GammaDist extends ProbDist<Double0D> {
 	private Double0D shape;
 	private Double0D rate;
 
+	private double logNormConst;
+
 	private Gamma gammaGen;
 
-	protected void checkInitialized(Numeric... parms) {
-		if (parms.length < 2) {
-			if (!this.initialized) {
-				throw new IllegalStateException(
-						"use of uninitialized probability distribution");
-			}
-		} else {
-			this.setParms((Double0D) parms[0], (Double0D) parms[1]);
-		}
+	public GammaDist() {
+		super();
 	}
 
 	public GammaDist(Double0D shape, Double0D rate, boolean checkParms) {
@@ -61,15 +55,15 @@ public class GammaDist extends ProbDist<Double0D> {
 		} else {
 			this.gammaGen.setState(this.shape.value(), this.rate.value());
 		}
+		this.logNormConst = cern.jet.stat.Gamma.logGamma(this.shape.value())
+				- this.shape.value() * Math.log(this.rate.value());
 	}
 
 	@Override
-	protected double getDensity(Double0D pt) {
-		return this.gammaGen.pdf(pt.value());
-	}
-
-	public double getLogDensity(Double0D pt) {
-		return Math.log(this.getDensity(pt));
+	protected double getLogDensity(Double0D pt) {
+		double x = pt.value();
+		return (this.shape.value()) * Math.log(x) - this.rate.value() * x
+				- this.logNormConst;
 	}
 
 	@Override

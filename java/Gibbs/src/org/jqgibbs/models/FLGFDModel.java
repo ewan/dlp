@@ -23,8 +23,7 @@ import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
-import org.jqgibbs.mathstat.probdist.ProbDistParmException;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 
 import cern.jet.stat.Gamma;
 
@@ -39,12 +38,12 @@ public class FLGFDModel extends Model {
 		}
 	}
 
-	class PostOmegaDist extends ProbDistInitializeByChain<Double2D> {
+	class PostOmegaDist extends ProbDistMC<Double2D> {
 		protected ProbDist<Double2D> baseSgBROKEN;
 
 		private Double2D postPhi;
 		private Double0D postLambda;
-		private InverseWishartDist iwDist;
+		private InverseWishartDist iwDist = new InverseWishartDist();
 
 		// Fixed parameters
 		private Double2D phi;
@@ -56,27 +55,19 @@ public class FLGFDModel extends Model {
 		private Double3D Sg;
 		private Double3D A;
 
-		public PostOmegaDist(Double2D phi, Double0D lambda)
-				throws ProbDistParmException {
+		public PostOmegaDist(Double2D phi, Double0D lambda) {
 			this.phi = phi;
 			this.lambda = lambda;
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.Z = (Integer1D) l.get("Z").getNumericValue();
 			this.M = (Double2D) l.get("M").getNumericValue();
 			this.Sg = (Double3D) l.get("Sg").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
-		}
-
-		private Double2D iwVariate() {
-			if (this.iwDist == null) {
-				this.iwDist = new InverseWishartDist(this.postPhi,
-						this.postLambda);
-				return this.iwDist.variate();
-			} else {
-				return this.iwDist.variate(this.postPhi, this.postLambda);
-			}
+			this.setUpFromChainParms();
+			this.initialized = true;
 		}
 
 		protected void setUpFromChainParms() {
@@ -98,7 +89,8 @@ public class FLGFDModel extends Model {
 			boolean goodSample = false;
 			Double2D o = null;
 			while (!goodSample) {
-				o = this.iwVariate();
+				this.iwDist.setParms(this.postPhi, this.postLambda);
+				o = this.iwDist.variate();
 				goodSample = true;
 				Integer1D active = this.Z.items();
 				for (Integer0D k : active) {
@@ -112,7 +104,7 @@ public class FLGFDModel extends Model {
 					}
 				}
 				if (goodSample) {
-					Double2D sg = this.baseSgBROKEN.variateFast();
+					Double2D sg = this.baseSgBROKEN.variate();
 					Double2D sgKOmega = sg.kron(o);
 					if (!sgKOmega.isWellConditioned()) {
 						goodSample = false;
@@ -123,17 +115,13 @@ public class FLGFDModel extends Model {
 			}
 			return o;
 		}
-
-		@Override
-		protected double getDensity(Double2D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
-		}
 	}
 
-	class PostSgDist extends ProbDistInitializeByChain<Double3D> {
+	class PostSgDist extends ProbDistMC<Double3D> {
 		// Fixed parameters
 		private Double2D Psi;
 		private Double0D kappa;
+		private Double2D data;
 
 		// Chain parameters
 		private Integer1D Z;
@@ -145,32 +133,31 @@ public class FLGFDModel extends Model {
 		private List<Double2D> postPsi;
 		private List<Double0D> postKappa;
 
-		public PostSgDist(Double2D Psi, Double0D kappa)
-				throws ProbDistParmException {
+		public PostSgDist(Double2D Psi, Double0D kappa, Double2D data) {
 			this.Psi = Psi;
 			this.kappa = kappa;
+			this.data = data;
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.Z = (Integer1D) l.get("Z").getNumericValue();
 			this.B = (Double2D) l.get("B").getNumericValue();
 			this.Omega = (Double2D) l.get("Omega").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
 			this.M = (Double2D) l.get("M").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
-		private Double3D iwVariates() {
-			return InverseWishartDist.variates(this.postPsi, this.postKappa);
-		}
-
-		protected void setUpFromChainParms() {
+		protected void setUpFromParms() {
 			this.postPsi = new ArrayList<Double2D>();
 			this.postKappa = new ArrayList<Double0D>();
 			Integer1D active = this.Z.items();
 			Double2D omegaInv = this.Omega.inverse();
 			for (Integer0D k : active) {
 				Integer1D zK = this.Z.which(k);
-				Double2D xK = this.getSamplerData().getAll(zK.value());
+				Double2D xK = this.data.getAll(zK.value());
 				Integer0D nK = new Integer0D(xK.size());
 
 				this.postKappa.add(this.kappa.plus(nK));
@@ -193,7 +180,8 @@ public class FLGFDModel extends Model {
 		protected Double3D genVariate() {
 			int d = FLGFDModel.this.dims;
 			double[][][] v = new double[this.A.size()][d][d];
-			Double3D activeUpdates = this.iwVariates();
+			Double3D activeUpdates = InverseWishartDist.variates(this.postPsi,
+					this.postKappa);
 			int i = 0;
 			Integer1D active = this.Z.items();
 			for (Integer0D k : active) {
@@ -202,16 +190,14 @@ public class FLGFDModel extends Model {
 			}
 			return new Double3D(v);
 		}
-
-		@Override
-		protected double getDensity(Double3D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
-		}
 	}
 
-	class PostADist extends ProbDistInitializeByChain<Double3D> {
+	class PostADist extends ProbDistMC<Double3D> {
 		private List<Double2D> postMs;
 		private List<Double2D> postOmegas;
+
+		// Fixed parameters
+		private Double2D data;
 
 		// Chain parameters
 		private Double2D Omega;
@@ -220,16 +206,19 @@ public class FLGFDModel extends Model {
 		private Integer1D Z;
 		private Double2D B;
 
-		public PostADist() throws ProbDistParmException {
-			// Empty (no fixed parameters)
+		public PostADist(Double2D data) {
+			this.data = data;
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.Omega = (Double2D) l.get("Omega").getNumericValue();
 			this.Sg = (Double3D) l.get("Sg").getNumericValue();
 			this.M = (Double2D) l.get("M").getNumericValue();
 			this.Z = (Integer1D) l.get("Z").getNumericValue();
 			this.B = (Double2D) l.get("B").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
 		private Double3D matnVariates() {
@@ -239,14 +228,14 @@ public class FLGFDModel extends Model {
 					this.postOmegas);
 		}
 
-		protected void setUpFromChainParms() {
+		protected void setUpFromParms() {
 			this.postOmegas = new ArrayList<Double2D>();
 			this.postMs = new ArrayList<Double2D>();
 			Integer1D active = this.Z.items();
 			Double2D omegaInv = this.Omega.inverse();
 			for (Integer0D k : active) {
 				Integer1D zK = this.Z.which(k);
-				Double2D xK = this.getSamplerData().getAll(zK.value());
+				Double2D xK = this.data.getAll(zK.value());
 				Double2D B = this.B.getAll(zK.value());
 				Double2D BTB = B.transpose().mult(B);
 				Double2D postOmegaInv = omegaInv.plus(BTB);
@@ -299,18 +288,16 @@ public class FLGFDModel extends Model {
 			}
 			return new Double3D(v);
 		}
-
-		@Override
-		protected double getDensity(Double3D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
-		}
 	}
 
-	class CRPDist extends ProbDistInitializeByChain<Integer1D> {
+	class CRPDist extends ProbDistMC<Integer1D> {
+		private final Double1D ZERO_VEC = new Double1D(
+				new double[FLGFDModel.this.dims]);
 
 		// Fixed parameters
 		private Double2D Psi;
 		private Double0D kappa;
+		private Double2D data;
 
 		// Chain parameters
 		private Double2D Omega;
@@ -321,13 +308,23 @@ public class FLGFDModel extends Model {
 		private Double2D M;
 		private Double0D al;
 
-		public CRPDist(Double2D Psi, Double0D kappa)
-				throws ProbDistParmException {
+		protected Double1D postProb;
+		private CategoricalDist catDist = new CategoricalDist();
+		private MVNormalDist mvnDist = new MVNormalDist();
+		private InverseWishartDist sgDist = new InverseWishartDist();
+		private MatrixNormalDist aDist = new MatrixNormalDist();
+
+		private Double2D omegaInv;
+		private Integer0D currMVNDist;
+
+		public CRPDist(Double2D Psi, Double0D kappa, Double2D data) {
 			this.Psi = Psi;
 			this.kappa = kappa;
+			this.data = data;
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.Omega = (Double2D) l.get("Omega").getNumericValue();
 			this.Sg = (Double3D) l.get("Sg").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
@@ -335,45 +332,24 @@ public class FLGFDModel extends Model {
 			this.B = (Double2D) l.get("B").getNumericValue();
 			this.M = (Double2D) l.get("M").getNumericValue();
 			this.al = (Double0D) l.get("al").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
-		protected Double1D postProb;
-		private CategoricalDist catDist;
-		private HashMap<Integer0D, MVNormalDist> mvnDists;
-		private InverseWishartDist sgDist;
-		private MatrixNormalDist aDist;
-
-		private Double2D omegaInv;
-
 		protected Integer0D catVariate() {
-			if (this.catDist == null) {
-				this.catDist = new CategoricalDist(this.postProb);
-				return this.catDist.variate();
-			} else {
-				return this.catDist.variate(this.postProb);
-			}
+			this.catDist.setParms(this.postProb);
+			return this.catDist.variate();
 		}
 
 		protected double mvnLogDensity(Integer0D k, Double1D pt) {
-			return this.mvnDists.get(k).logDensity(pt);
+			if (this.currMVNDist == null || !this.currMVNDist.equals(k)) {
+				this.mvnDist.setParms(this.ZERO_VEC, this.Sg.get(k.value()));
+			}
+			return this.mvnDist.logDensity(pt);
 		}
-
-		protected void setUpPostMvn(Integer0D k) {
-			if (this.mvnDists == null) {
-				this.mvnDists = new HashMap<Integer0D, MVNormalDist>();
-			}
-			if (!this.mvnDists.containsKey(k)) {
-				double[] zeroD = new double[FLGFDModel.this.dims];
-				Double1D zero = new Double1D(zeroD);
-				this.mvnDists.put(k,
-						new MVNormalDist(zero, this.Sg.get(k.value())));
-			}
-		}
-
-		protected void resetPostMvn(Integer0D k) {
-			if (this.mvnDists != null && this.mvnDists.containsKey(k)) {
-				this.mvnDists.remove(k);
-			}
+		
+		protected void resetCurrMVNDist() {
+			this.currMVNDist = null;
 		}
 
 		protected double marginalNew(Double1D pt, Double1D b) {
@@ -383,7 +359,7 @@ public class FLGFDModel extends Model {
 			Double2D mO = this.M.transpose().mult(this.omegaInv).mult(this.M);
 			Double2D mHXO = mHX.mult(omegaN).mult(mHX.transpose());
 			Double2D psiN = this.Psi.plus(pt.outer(pt).plus(mO).minus(mHXO));
-			int d = this.getSamplerData().numCols();
+			int d = this.data.numCols();
 			double kN = this.kappa.value() + 1;
 			double lmd = Math.log(FLGFDModel.gammaD(kN / 2, d));
 			lmd -= Math.log(2) * d / 2;
@@ -397,30 +373,21 @@ public class FLGFDModel extends Model {
 		}
 
 		protected Double2D sgVariate(Double2D psi, double k) {
-			if (this.sgDist == null) {
-				this.sgDist = new InverseWishartDist(psi, new Double0D(k));
-				return this.sgDist.variate();
-			} else {
-				return this.sgDist.variate(psi, new Double0D(k));
-			}
+			this.sgDist.setParms(psi, new Double0D(k));
+			return this.sgDist.variate();
 		}
 
 		protected Double2D aVariate(Double2D M, Double2D sg, Double2D omega) {
-			if (this.aDist == null) {
-				this.aDist = new MatrixNormalDist(M, sg, omega);
-				return this.aDist.variate();
-			} else {
-				return this.aDist.variate(M, sg, omega);
-			}
+			this.aDist.setParms(M, sg, omega);
+			return this.aDist.variate();
 		}
 
 		protected List<Double2D> getVariateDPPost(Double1D pt, Double1D b) {
-			Double2D omegaN = this.Omega.inverse().plus(b.outer(b)).inverse();
-			Double2D mH = this.M.transpose().mult(this.Omega.inverse());
+			Double2D omegaN = this.omegaInv.plus(b.outer(b)).inverse();
+			Double2D mH = this.M.transpose().mult(this.omegaInv);
 			Double2D mHX = mH.plus(pt.outer(b));
 			Double2D mHXO = mHX.mult(omegaN).mult(mHX.transpose());
-			Double2D mO = this.M.transpose().mult(this.Omega.inverse())
-					.mult(this.M);
+			Double2D mO = this.M.transpose().mult(this.omegaInv).mult(this.M);
 			Double2D psiN = this.Psi.plus(pt.outer(pt).plus(mO).minus(mHXO));
 			double kN = this.kappa.value() + 1;
 			Double2D sgNew = null;
@@ -454,8 +421,7 @@ public class FLGFDModel extends Model {
 			return new ArrayList<Double2D>(Arrays.asList(sgNew, aNew));
 		}
 
-		protected void setUpFromChainParms() {
-			this.mvnDists = null;
+		protected void setUpFromParms() {
 			this.omegaInv = this.Omega.inverse();
 		}
 
@@ -463,7 +429,7 @@ public class FLGFDModel extends Model {
 		protected Integer1D genVariate() {
 			// FIXME - This sampling scheme destructively modifies
 			// A, Sg - HACK
-			int N = this.getSamplerData().size();
+			int N = this.Z.size();
 			Integer1D Z = null;
 			try {
 				Z = (Integer1D) this.Z.clone();
@@ -473,7 +439,7 @@ public class FLGFDModel extends Model {
 			}
 			Integer0D unused = new Integer0D(-1);
 			for (int i = 0; i < N; i++) {
-				Double1D Xi = this.getSamplerData().get(i);
+				Double1D Xi = this.data.get(i);
 				Integer1D active = Z.items();
 				Z.set(i, unused);
 				double[] logP = new double[active.size() + 1];
@@ -486,8 +452,7 @@ public class FLGFDModel extends Model {
 					int nZK = zK.size();
 					if (nZK > 0) {
 						Double1D aTB = b.mult(this.A.get(k.value()));
-						Double1D xIA = this.getSamplerData().get(i).minus(aTB);
-						this.setUpPostMvn(k);
+						Double1D xIA = this.data.get(i).minus(aTB);
 						logP[ai] = this.mvnLogDensity(k, xIA) + Math.log(nZK);
 						if (logP[ai] == Double.POSITIVE_INFINITY) {
 							logP[ai] = Double.MAX_VALUE;
@@ -519,7 +484,7 @@ public class FLGFDModel extends Model {
 				if (az == newc) {
 					int maxActive = active.get(active.size() - 1).value();
 					zedNew = Z.minNotIn(0, maxActive);
-					this.resetPostMvn(zedNew);
+					this.resetCurrMVNDist();
 					List<Double2D> newcParms = this.getVariateDPPost(Xi, b);
 					Double2D newSg = newcParms.get(0);
 					Double2D newA = newcParms.get(1);
@@ -532,19 +497,14 @@ public class FLGFDModel extends Model {
 			}
 			return Z;
 		}
-
-		@Override
-		protected double getDensity(Integer1D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
-		}
 	}
 
-	class PostMDist extends ProbDistInitializeByChain<Double2D> {
+	class PostMDist extends ProbDistMC<Double2D> {
 		// Fixed parameters
 		protected Double1D vecW;
 		protected Double2D SInv;
 
-		protected MVNormalDist mvnDist;
+		protected MVNormalDist mvnDist = new MVNormalDist();
 		protected Double1D postVecMu;
 		protected Double2D postKronSg;
 
@@ -555,36 +515,24 @@ public class FLGFDModel extends Model {
 		private Double3D Sg;
 		private Double3D A;
 
-		public PostMDist(Double2D W, Double2D S) throws ProbDistParmException {
+		public PostMDist(Double2D W, Double2D S) {
 			this.vecW = W.colVec();
 			this.SInv = S.inverse();
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.Z = (Integer1D) l.get("Z").getNumericValue();
 			this.B = (Double2D) l.get("B").getNumericValue();
 			this.Omega = (Double2D) l.get("Omega").getNumericValue();
 			this.Sg = (Double3D) l.get("Sg").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
-		protected Double2D matnVariate() {
-			int h = this.A.numRows();
-			Double1D vecVariate;
-			if (this.mvnDist == null) {
-				this.mvnDist = new MVNormalDist(this.postVecMu, this.postKronSg);
-				vecVariate = this.mvnDist.variate();
-
-			} else {
-				vecVariate = this.mvnDist.variate(this.postVecMu,
-						this.postKronSg);
-			}
-			return vecVariate.toDouble2D(h);
-		}
-
-		protected void setUpFromChainParms() {
-			int h = this.B.numCols();
-			Double2D sInvKIdh = this.SInv.kron(Double2D.ident(h));
+		protected void setUpFromParms() {
+			Double2D sInvKIdh = this.SInv.kron(Double2D.ident(this.B.numCols()));
 			Double2D postKronSgInv = sInvKIdh;
 			Double1D postVecMup = sInvKIdh.mult(this.vecW);
 			Integer1D active = this.Z.items();
@@ -602,59 +550,48 @@ public class FLGFDModel extends Model {
 
 		@Override
 		protected Double2D genVariate() {
-			return this.matnVariate();
-		}
-
-		@Override
-		protected double getDensity(Double2D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
+			this.mvnDist.setParms(this.postVecMu, this.postKronSg);
+			return this.mvnDist.variate().toDouble2D(this.B.numCols());
 		}
 	}
 
-	class PostXDist extends ProbDistInitializeByChain<Double0D> {
-		private BetaDist betaDist;
+	class PostXDist extends ProbDistMC<Double0D> {
+		private BetaDist betaDist = new BetaDist();
 		private Double0D postXA;
 		private Double0D postXB;
 
 		// Chain parameters
 		private Double0D al;
+		private Integer1D Z;
 
-		public PostXDist() throws ProbDistParmException {
-			// Empty (no fixed parameters)
-		}
-
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.al = (Double0D) l.get("al").getNumericValue();
+			this.Z = (Integer1D) l.get("Z").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
-		private Double0D betaVariate() {
-			if (this.betaDist == null) {
-				this.betaDist = new BetaDist(this.postXA, this.postXB);
-				return this.betaDist.variate();
-			} else {
-				return this.betaDist.variate(this.postXA, this.postXB);
-			}
-		}
-
-		protected void setUpFromChainParms() {
+		protected void setUpFromParms() {
 			this.postXA = this.al.plus(1);
-			this.postXB = new Double0D((double) this.getSamplerData().size());
+			this.postXB = new Double0D((double) this.Z.size());
+			this.betaDist.setParms(this.postXA, this.postXB);
 		}
 
 		@Override
 		protected Double0D genVariate() {
-			return this.betaVariate();
+			return this.betaDist.variate();
 		}
 
 		@Override
-		protected double getDensity(Double0D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
+		protected double getLogDensity(Double0D pt) {
+			return this.betaDist.logDensity(pt);
 		}
 	}
 
-	class PostAlDist extends ProbDistInitializeByChain<Double0D> {
-		private GammaDist gammaDist;
-		private CategoricalDist catDist;
+	class PostAlDist extends ProbDistMC<Double0D> {
+		private GammaDist gammaDist = new GammaDist();
+		private CategoricalDist catDist = new CategoricalDist();
 		private Double0D postAlA;
 		private Double0D postAlB;
 
@@ -666,85 +603,71 @@ public class FLGFDModel extends Model {
 		private Double0D x;
 		private Integer1D Z;
 
-		public PostAlDist(Double0D ala, Double0D alb)
-				throws ProbDistParmException {
+		public PostAlDist(Double0D ala, Double0D alb) {
 			this.ala = ala;
 			this.alb = alb;
 		}
 
-		protected void initializeChainParms(ChainLink l) {
+		@Override
+		public void setMCState(ChainLink l) {
 			this.x = (Double0D) l.get("x").getNumericValue();
 			this.Z = (Integer1D) l.get("Z").getNumericValue();
+			this.setUpFromParms();
+			this.initialized = true;
 		}
 
-		protected void setUpFromChainParms() {
+		protected void setUpFromParms() {
 			int K = this.Z.items().size();
-			int N = this.getSamplerData().size();
+			int N = this.Z.size();
 			double logX = Math.log(this.x.value());
 			double p1 = this.ala.value() + K - 1;
 			double p2 = N * (this.alb.value() - logX);
 
-			int i;
-			if (this.catDist == null) {
-				this.catDist = new CategoricalDist(new Double1D(p1, p2));
-				i = this.catDist.variate().value();
-			} else {
-				i = this.catDist.variate(new Double1D(p1, p2)).value();
-			}
+			this.catDist.setParms(new Double1D(p1, p2));
+			int i = this.catDist.variate().value();
+
 			if (i == 0) {
 				this.postAlA = this.ala.plus(K);
 			} else {
 				this.postAlA = this.ala.plus(K - 1);
 			}
 			this.postAlB = this.alb.plus(-logX);
+			this.gammaDist.setParms(this.postAlA, this.postAlB);
 		}
 
 		@Override
 		protected Double0D genVariate() {
-			if (this.gammaDist == null) {
-				this.gammaDist = new GammaDist(this.postAlA, this.postAlB);
-				return this.gammaDist.variate();
-			} else {
-				return this.gammaDist.variate(this.postAlA, this.postAlB);
-			}
+			return this.gammaDist.variate();
 		}
 
 		@Override
-		protected double getDensity(Double0D pt) {
+		protected double getLogDensity(Double0D pt) {
+			// FIXME NOW!!!
 			throw new UnsupportedOperationException("Too lazy, come back later");
 		}
 	}
 
-	class PostBDist extends ProbDistInitializeByChain<Double2D> {
+	// FIXME
+	class PostBDist extends ProbDistMC<Double2D> {
 		// Chain parameters
 		private Double2D B;
 
-		public PostBDist() throws ProbDistParmException {
-			// Empty (no fixed parameters)
-		}
+		public PostBDist() { }
 
-		protected void initializeChainParms(ChainLink l) {
+		public void setMCState(ChainLink l) {
 			this.B = (Double2D) l.get("B").getNumericValue();
+			this.initialized = true;
 		}
-
-		protected void setUpFromChainParms() {
-			// empty
-		}
-
+		
 		@Override
 		protected Double2D genVariate() {
 			return this.B;
-		}
-
-		@Override
-		protected double getDensity(Double2D pt) {
-			throw new UnsupportedOperationException("Too lazy, come back later");
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public static ChainLink pointEstimate(List<ChainLink> c, Double2D d,
-			Map<String, Numeric> hypers) throws ProbDistParmException {
+			Map<String, Numeric> hypers) {
 		// MAP
 		double max = Double.NEGATIVE_INFINITY;
 		int argmax = c.size() - 1;
@@ -782,7 +705,7 @@ public class FLGFDModel extends Model {
 			RandomVar<Double2D> rvB = (RandomVar<Double2D>) cli.get("B");
 			Double2D B = rvB.getNumericValue();
 			// skip
-			// Z
+			// Z FIXME
 			RandomVar<Integer1D> rvZ = (RandomVar<Integer1D>) cli.get("Z");
 			Integer1D Z = rvZ.getNumericValue();
 			for (int j = 0; j < Z.size(); j++) {
@@ -838,7 +761,7 @@ public class FLGFDModel extends Model {
 					for (int j = 0; j < st.length; j++) {
 						System.err.println(st[j].toString());
 					}
-					throw new ProbDistParmException(e);
+					throw new RuntimeException(e);
 				}
 			}
 			// Set max
@@ -855,7 +778,7 @@ public class FLGFDModel extends Model {
 	}
 
 	public FLGFDModel(Map<String, Numeric> hypers, Map<String, Numeric> init,
-			int dims) throws ProbDistParmException {
+			Double2D data, int dims) {
 		super(hypers, dims);
 		// Set up parameters
 		this.params = new HashMap<String, RandomVar<? extends Numeric>>();
@@ -874,21 +797,21 @@ public class FLGFDModel extends Model {
 
 		// Sg
 		PostSgDist postSg = new PostSgDist((Double2D) this.getHyper("Psi"),
-				(Double0D) this.getHyper("kappa"));
+				(Double0D) this.getHyper("kappa"), data);
 		Double3D defaultSg = (Double3D) init.get("Sg");
 		RandomVar<Double3D> rvSg = new RandomVar<Double3D>("Sg", postSg,
 				defaultSg);
 		this.params.put("Sg", rvSg);
 
 		// A
-		PostADist postA = new PostADist();
+		PostADist postA = new PostADist(data);
 		Double3D defaultA = (Double3D) init.get("A");
 		RandomVar<Double3D> rvA = new RandomVar<Double3D>("A", postA, defaultA);
 		this.params.put("A", rvA);
 
 		// Z
 		CRPDist postZ = new CRPDist((Double2D) this.getHyper("Psi"),
-				(Double0D) this.getHyper("kappa"));
+				(Double0D) this.getHyper("kappa"), data);
 		Integer1D defaultZ = (Integer1D) init.get("Z");
 		RandomVar<Integer1D> rvZ = new RandomVar<Integer1D>("Z", postZ,
 				defaultZ);
@@ -914,7 +837,7 @@ public class FLGFDModel extends Model {
 		this.params.put("x", rvX);
 
 		// al
-		ProbDist<Double0D> postAl = new PostAlDist(
+		ProbDistMC<Double0D> postAl = new PostAlDist(
 				(Double0D) this.getHyper("ala"),
 				(Double0D) this.getHyper("alb"));
 		Double0D defaultAl = (Double0D) init.get("al");

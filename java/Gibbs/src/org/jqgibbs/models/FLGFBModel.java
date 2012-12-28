@@ -25,7 +25,7 @@ import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.mathstat.probdist.SeqInverseWishartDist;
@@ -34,7 +34,7 @@ import org.jqgibbs.mathstat.probdist.SeqMatrixNormalDist;
 
 public class FLGFBModel extends Model {
 
-	class PriorOmegaDist extends ProbDistInitializeByChain<Double2D> {
+	class PriorOmegaDist extends ProbDistMC<Double2D> {
 		private InverseWishartDist iwDist; // FIXME - Shouldn't this use the IID?
 
 
@@ -104,7 +104,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 
-	class PostOmegaDist extends ProbDistInitializeByChain<Double2D> {
+	class PostOmegaDist extends ProbDistMC<Double2D> {
 		private Double2D postPhi;
 		private Integer0D postLambda;
 		private InverseWishartDist iwDist;
@@ -223,7 +223,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 
-	class PriorSgDist extends ProbDistInitializeByChain<Double3D> {
+	class PriorSgDist extends ProbDistMC<Double3D> {
 		private SeqInverseWishartDist iwDists; // FIXME - Shouldn't this use the IID?
 		private ListSequence<Double2D> repPsi;
 		private ListSequence<Integer0D> repKappa;
@@ -316,7 +316,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 	
-	class PostSgDist extends ProbDistInitializeByChain<Double3D> {
+	class PostSgDist extends ProbDistMC<Double3D> {
 		private ListSequence<Double2D> postPsi;
 		private ListSequence<Integer0D> postKappa;
 		private SeqInverseWishartDist iwDists;
@@ -465,7 +465,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 	
-	class PriorADist extends ProbDistInitializeByChain<Double3D> {
+	class PriorADist extends ProbDistMC<Double3D> {
 		private SeqMatrixNormalDist matnDists;
 		
 		public PriorADist(Numeric<?>... fixed) throws ProbDistParmException {
@@ -561,7 +561,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 
-	class PostADist extends ProbDistInitializeByChain<Double3D> {
+	class PostADist extends ProbDistMC<Double3D> {
 		private ListSequence<Double2D> postMs;
 		private ListSequence<Double2D> postOmegas;
 		private SeqMatrixNormalDist matnDists;
@@ -690,7 +690,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 	
-	class CPDist extends ProbDistInitializeByChain<Integer1D> {
+	class CPDist extends ProbDistMC<Integer1D> {
 		public CPDist(Numeric<?>... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
@@ -924,7 +924,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 
-	class PostMDist extends ProbDistInitializeByChain<Double2D> {
+	class PostMDist extends ProbDistMC<Double2D> {
 		protected MVNormalDist mvnDist;
 		protected Double1D vecW;
 		protected Double2D SInv;
@@ -1070,7 +1070,7 @@ public class FLGFBModel extends Model {
 		}
 	}
 	
-	class PostXDist extends ProbDistInitializeByChain<Double0D> {
+	class PostXDist extends ProbDistMC<Double0D> {
 		private BetaDist betaDist;
 		private Double0D postXA;
 		private Double0D postXB;
@@ -1147,7 +1147,7 @@ public class FLGFBModel extends Model {
 		}
 	}	
 	
-	class PostAlDist extends ProbDistInitializeByChain<Double0D> {
+	class PostAlDist extends ProbDistMC<Double0D> {
 		private GammaDist gammaDist;
 		private CategoricalDist catDist;
 		private Double0D postAlA;
@@ -1282,7 +1282,7 @@ public class FLGFBModel extends Model {
 		}
 	}
 	
-	class PostBDist extends ProbDistInitializeByChain<Integer2D> {
+	class PostBDist extends ProbDistMC<Integer2D> {
 		public PostBDist(Numeric<?>... fixed) throws ProbDistParmException {
 			super(fixed);
 		}		
@@ -1393,7 +1393,7 @@ public class FLGFBModel extends Model {
 		// al
 		ProbDist<Double0D> priorAl = new GammaDist((Double0D) this
 				.getHyper("ala"), (Double0D) this.getHyper("alb"));
-		ProbDistInitializeByChain<Double0D> postAl = new PostAlDist((Double0D) this
+		ProbDistMC<Double0D> postAl = new PostAlDist((Double0D) this
 				.getHyper("ala"), (Double0D) this.getHyper("alb"));		
 		Double0D defaultAl = (Double0D) init.get("al"); // FIXME
 		RandomVar<Double0D> rvAl = new RandomVar<Double0D>("al", priorAl,

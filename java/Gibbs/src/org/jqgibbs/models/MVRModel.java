@@ -25,7 +25,7 @@ import org.jqgibbs.mathstat.probdist.InverseWishartDist;
 import org.jqgibbs.mathstat.probdist.MVNormalDist;
 import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDist;
-import org.jqgibbs.mathstat.probdist.ProbDistInitializeByChain;
+import org.jqgibbs.mathstat.probdist.ProbDistMC;
 import org.jqgibbs.mathstat.probdist.ProbDistParmCheck;
 import org.jqgibbs.mathstat.probdist.ProbDistParmException;
 import org.jqgibbs.mathstat.probdist.SeqInverseWishartDist;
@@ -36,7 +36,7 @@ import cern.jet.stat.Gamma;
 
 public class MVRModel extends Model {
 
-	class PostOmegaDist extends ProbDistInitializeByChain<Double2D> {
+	class PostOmegaDist extends ProbDistMC<Double2D> {
 		private Double2D postPhi;
 		private Double0D postLambda;
 		private InverseWishartDist iwDist;
@@ -155,7 +155,7 @@ public class MVRModel extends Model {
 		}
 	}
 
-	class PriorSgDist extends ProbDistInitializeByChain<Double2D> {
+	class PriorSgDist extends ProbDistMC<Double2D> {
 		private InverseWishartDist iwDist;
 
 		public PriorSgDist(Numeric<?>... fixed) throws ProbDistParmException {
@@ -215,7 +215,7 @@ public class MVRModel extends Model {
 		}
 	}
 
-	class PostSgDist extends ProbDistInitializeByChain<Double2D> {
+	class PostSgDist extends ProbDistMC<Double2D> {
 		private Double2D postPsi;
 		private Double0D postKappa;
 		private InverseWishartDist iwDist;
@@ -334,7 +334,7 @@ public class MVRModel extends Model {
 		}
 	}
 
-	class PriorADist extends ProbDistInitializeByChain<Double2D> {
+	class PriorADist extends ProbDistMC<Double2D> {
 		private MatrixNormalDist matnDist;
 
 		public PriorADist(Numeric<?>... fixed) throws ProbDistParmException {
@@ -402,7 +402,7 @@ public class MVRModel extends Model {
 		}
 	}
 
-	class PostADist extends ProbDistInitializeByChain<Double2D> {
+	class PostADist extends ProbDistMC<Double2D> {
 		private Double2D postM;
 		private Double2D postOmega;
 		private MatrixNormalDist matnDist;
@@ -506,7 +506,7 @@ public class MVRModel extends Model {
 		}
 	}
 
-	class PostBDist extends ProbDistInitializeByChain<Double2D> {
+	class PostBDist extends ProbDistMC<Double2D> {
 		public PostBDist(Numeric<?>... fixed) throws ProbDistParmException {
 			super(fixed);
 		}
