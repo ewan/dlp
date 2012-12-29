@@ -1,9 +1,9 @@
 package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.ChainLink;
-import org.jqgibbs.mathstat.Numeric;
+import org.jqgibbs.Flattenable;
 
-public abstract class ProbDistMC<T extends Numeric> extends ProbDist<T> {
+public abstract class ProbDistMC<T extends Flattenable> extends ProbDist<T> {
 	
 	public abstract void setMCState(ChainLink l);
 	

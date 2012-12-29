@@ -1,8 +1,8 @@
 package org.jqgibbs.mathstat;
 
-import java.math.BigDecimal;
+import org.jqgibbs.Flattenable;
 
-public class Integer0D implements Numeric {
+public class Integer0D implements Flattenable {
 
 	private int i;
 	
@@ -14,33 +14,7 @@ public class Integer0D implements Numeric {
 		return this.i;
 	}
 
-	//@Override
-	public Integer1D sequence() {
-		return new Integer1D(this);
-	}
-
-	public int compareTo(Integer0D o) {
-		return this.value() - o.value();
-	}
-	
-	public int compareTo(int o) {
-		return this.value() - o;
-	}
-
-	//@Override
-	public Object clone() throws CloneNotSupportedException {
-		return new Integer0D(i);
-	}
-
-	//@Override
-	public Integer0D cloneFromVector(Double1D v) {
-		if (v.size() == 0) {
-			return new Integer0D(0); // FIXME
-		}
-		return new Integer0D((int) v.get(0).value());
-	}
-
-	//@Override
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Integer0D)) {
 			return false;
@@ -48,11 +22,21 @@ public class Integer0D implements Numeric {
 		return this.value() == ((Integer0D) o).value();
 	}
 
-	//@Override
+	@Override
 	public int hashCode() {
 		return this.value();
 	}
-
+	
+	public Double1D rowVec() {
+		return new Double1D((double) this.value()); 
+	}
+	
+	public int length1D() {
+		return 1;
+	}
+	
+	// Convenience methods
+	
 	public Integer0D plus(int k) {
 		return new Integer0D(this.value() + k);
 	}
@@ -69,13 +53,5 @@ public class Integer0D implements Numeric {
 		return (new Double0D(this.value()).divide(k));
 	}
 	
-	//@Override
-	public Double1D rowVec() {
-		return new Double1D((double) this.value()); 
-	}
-	
-	//@Override
-	public int length1D() {
-		return 1;
-	}
+
 }

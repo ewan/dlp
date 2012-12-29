@@ -3,7 +3,9 @@ package org.jqgibbs.mathstat;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public class Double0D implements Numeric {
+import org.jqgibbs.Flattenable;
+
+public class Double0D implements Flattenable {
 	private static final int SCALE = 35;
 	private BigDecimal d;
 	private boolean dirty;
@@ -21,6 +23,14 @@ public class Double0D implements Numeric {
 		this.dirty = false;
 	}
 	
+	public int length1D() {
+		return 1;
+	}
+	
+	public Double1D rowVec() {
+		return new Double1D(this.value());
+	}
+		
 	public double value() {
 		if (this.dirty) {
 			this.cached = this.d.doubleValue(); 
@@ -32,25 +42,7 @@ public class Double0D implements Numeric {
 		return d;
 	}
 
-	
-	public Double1D sequence() {
-		return new Double1D(this.value());
-	}
-
-	
-	public Object clone() throws CloneNotSupportedException {
-		return new Double0D(this.value());
-	}
-
-	
-	public Double0D cloneFromVector(Double1D v) {
-		if (v.size() == 0) {
-			return new Double0D(0); // FIXME
-		}
-		return new Double0D(v.get(0).value());
-	}
-
-	
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Double0D)) {
 			return false;
@@ -58,20 +50,22 @@ public class Double0D implements Numeric {
 		return this.value() == ((Double0D) o).value();
 	}
 
-	
+	@Override
 	public int hashCode() {
 		return (int) this.value();
 	}
 
+	@Override
+	public String toString() {
+		return String.valueOf(this.value());
+	}
+	
+	// Convenience methods
+	
 	public Double0D plus(double d) {
 		return new Double0D(this.getBigDecimal().add(new BigDecimal(d))); // FIXME
 	}
 	
-	
-	public String toString() {
-		return String.valueOf(this.value());
-	}
-
 	public Double0D mult(double e) {
 		return new Double0D(this.value()*e); // FIXME
 	}
@@ -104,16 +98,6 @@ public class Double0D implements Numeric {
 		return new Double0D((new BigDecimal(1)).divide(this.getBigDecimal(), Double0D.SCALE, RoundingMode.HALF_EVEN));
 	}
 
-	
-	public Double1D rowVec() {
-		return new Double1D(this.value());
-	}
-	
-	
-	public int length1D() {
-		return 1;
-	}
-
 	public Double0D sqrt() {
 		return new Double0D(Math.sqrt(this.value()));
 	}
@@ -122,9 +106,4 @@ public class Double0D implements Numeric {
 		return new Double0D(Math.exp(this.value()));
 	}
 
-	public void set(double d) {
-		this.d = new BigDecimal(d);
-		this.cached = d;
-		this.dirty = false;
-	}
 }

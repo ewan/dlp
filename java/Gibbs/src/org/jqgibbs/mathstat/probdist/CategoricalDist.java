@@ -1,7 +1,6 @@
 package org.jqgibbs.mathstat.probdist;
 
 import org.jqgibbs.RandomEngineSelector;
-import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Integer0D;
 
@@ -36,8 +35,8 @@ public class CategoricalDist extends ProbDist<Integer0D> {
 	}
 
 	private void checkParms() {
-		for (Double0D d : this.p) {
-			if (d.value() < 0) {
+		for (double d : this.p.value()) {
+			if (d < 0) {
 				throw new IllegalArgumentException("Negative value in p");
 			}
 		}
@@ -62,9 +61,7 @@ public class CategoricalDist extends ProbDist<Integer0D> {
 		}
 	}
 
-	/**
-	 * @ewan sez fix this
-	 */
+	// FIXME
 	@Override
 	protected Integer0D genVariate() {
 		int[] sample = new int[20];

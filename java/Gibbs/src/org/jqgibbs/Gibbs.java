@@ -11,7 +11,6 @@ import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Integer2D;
-import org.jqgibbs.mathstat.Numeric;
 import org.jqgibbs.models.FLGFDModel;
 import org.jqgibbs.models.FLGFEModel;
 import org.jqgibbs.models.FLGFVModel;
@@ -62,7 +61,7 @@ public class Gibbs {
 		d = d.getColAll(1,2,3);
 		// hyperparameters
 		Double2D cov = d.cov();
-		Map<String, Numeric> hypers = new HashMap<String,Numeric>();
+		Map<String, Flattenable> hypers = new HashMap<String,Flattenable>();
 		hypers.put("lambda", new Double0D(22));
 		hypers.put("beta", new Double0D(1));
 		hypers.put("W", new Double2D(h,ddim));
@@ -93,7 +92,7 @@ public class Gibbs {
 		hypers.put("ga", new Double0D(1));			
 		
 		// initialization
-		Map<String, Numeric> init = new HashMap<String,Numeric>();
+		Map<String, Flattenable> init = new HashMap<String,Flattenable>();
 		init.put("M", new Double2D(h,ddim));
 		init.put("A", new Double3D(new Double2D(h,ddim)));
 		double[] M = new double[ddim];

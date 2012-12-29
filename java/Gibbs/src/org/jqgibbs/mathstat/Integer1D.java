@@ -3,17 +3,15 @@ package org.jqgibbs.mathstat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import cern.colt.matrix.DoubleMatrix2D;
-import cern.colt.matrix.impl.DenseDoubleMatrix1D;
+import org.jqgibbs.Flattenable;
 
-public class Integer1D implements Numeric, Iterable<Integer0D> {
+public class Integer1D implements Flattenable {
 
 	private int[] ints;
 	private boolean dirtyWhich;
-	private Map<Integer0D,Integer1D> which;
+	private Map<Integer,Integer1D> which;
 
 	public Integer1D(Integer0D... i0Ds) {
 		this.setInts(new int[0]);
@@ -35,28 +33,61 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		this.setInts(ints);
 	}
 
+	public Double1D rowVec() {
+		double[] ds = new double[this.size()];
+		for (int i=0; i<this.size(); i++) {
+			ds[i] = this.ints[i];
+		}
+		return new Double1D(ds);		
+	}
+	
+	public int length1D() {
+		return this.size();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof Integer1D)) {
+			return false;
+		}		
+		return this.value() == ((Integer1D) o).value();
+	}
+	
+	@Override
+	public int hashCode() {
+		int h = 0;
+		for (int i=0; i<this.size(); i++) {
+			h = h + this.value()[i];
+		}
+		return h;		
+	}
+	
+	@Override
+	public String toString() {
+		String s = "";
+		String prefix = "";
+		for (int i=0; i < this.size(); i++) {
+			s = s + prefix + String.valueOf(this.value()[i]);
+			prefix = " ";
+		}
+		return s;
+	}
+	
 	private synchronized void setInts(int[] ints) {
 		this.ints = ints;
 		this.dirtyWhich = true;
 	}
 
-	private synchronized int[] getInts() {
-		return this.ints;
-	}
-
-	public boolean add(Integer0D i0D) {
-		int[] ints = Arrays.copyOf(this.getInts(), this.size() + 1);
-		if (i0D == null) {
-			throw new NullPointerException();
-		}
-		ints[this.size()] = i0D.value();
+	public boolean add(int i0D) {
+		int[] ints = Arrays.copyOf(this.ints, this.size() + 1);
+		ints[this.size()] = i0D;
 		this.setInts(ints);
 		this.dirtyWhich = true;		
 		return true;
 	}
 
 	public boolean addAll(Collection<? extends Integer0D> c) {
-		int[] ints = Arrays.copyOf(this.getInts(), this.size() + c.size());
+		int[] ints = Arrays.copyOf(this.ints, this.size() + c.size());
 		int i = this.size();
 		for (Integer0D curr : c) {
 			if (curr == null) {
@@ -70,40 +101,15 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		return true;
 	}
 
-	public boolean contains(Object o) {
-		int d;
-		if (o == null) {
-			throw new NullPointerException();
-		} else if (o instanceof Integer0D) {
-			d = ((Integer0D) o).value();
-		} else if (o instanceof Integer) {
-			d = ((Integer) o).intValue();
-		} else {
-			return false;
-		}
-		for (int i = 0; i < this.size(); i++) {
-			if (this.get(i).value() == d) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public int size() {
-		return this.getInts().length;
+		return this.ints.length;
 	}
 
 	public int[] value() {
-		return this.getInts();
+		return this.ints;
 	}
 
-	//@Override
-	public Integer0D get(int i) {
-		return new Integer0D(this.getInts()[i]);
-	}
-	
-	//@Override
-	public Integer1D getAll(int... dis) {
+	public Integer1D getAll(int[] dis) {
 		int[] d = this.value();
 		int[] all = new int[dis.length];
 		int ai = 0;
@@ -113,11 +119,6 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		}
 		return new Integer1D(all);
 	}
-	
-	//@Override
-	public Object clone() throws CloneNotSupportedException {
-		return new Integer1D(this.getInts().clone());
-	}
 
 	/**
 	 * Returns a new Integer1D object that contains exactly those indices
@@ -126,17 +127,16 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 	@param  n  the integer to find against
 
 	 */
-
-	//@Override
-	public Integer1D which(Integer0D n) {
+	// FIXME
+	public Integer1D which(Integer n) {
 		if (this.dirtyWhich) {
-			Integer1D active = this.items();
-			this.which = new HashMap<Integer0D,Integer1D>();
-			for (Integer0D k : active) {
+			int[] active = this.items().value();
+			this.which = new HashMap<Integer,Integer1D>();
+			for (int k : active) {
 				int[] w = new int[this.size()];
 				int wi = 0;
 				for (int i=0; i<this.size(); i++) {
-					if (this.value()[i] == k.value()) {
+					if (this.value()[i] == k) {
 						w[wi] = i;
 						wi++;
 					}
@@ -152,82 +152,6 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		return whichN;
 	}
 
-	public Integer0D max() {
-		int max = Integer.MIN_VALUE;
-		for (Integer0D i : this) {
-			if (i.value() > max) {
-				max = i.value();
-			}
-		}
-		return new Integer0D(max);
-	}
-
-	//@Override
-	public Integer1D cloneFromVector(Double1D v) {
-		int[] ds = new int[this.size()];
-		for (int i=0; i<this.size(); i++) {
-			if (i >= v.size()) {
-				return new Integer1D(ds);
-			}
-			ds[i] = (int) v.get(i).value();
-		}
-		return new Integer1D(ds);
-	}
-	
-	//@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof Integer1D)) {
-			return false;
-		}		
-		return this.value() == ((Integer1D) o).value();
-	}
-	
-	//@Override
-	public int hashCode() {
-		int h = 0;
-		for (int i=0; i<this.size(); i++) {
-			h = h + this.value()[i];
-		}
-		return h;		
-	}
-
-	public Integer1D intersect(Integer1D other) {
-		int[] i1, i2;
-		if (this.size() >= other.size()) {
-			i1 = Arrays.copyOf(other.value(), other.size());
-			i2 = Arrays.copyOf(this.value(), this.size());
-		} else {
-			i1 = Arrays.copyOf(this.value(), this.size());
-			i2 = Arrays.copyOf(other.value(), other.size());		
-		}
-		Arrays.sort(i1);
-		Arrays.sort(i2);
-		int[] intersection = new int[Math.min(i1.length, i2.length)];
-		int n=0;		
-		if (i1.length > 0) {
-			int last = i1[0]-1;
-			for (int i=0; i<i1.length; i++) {
-				if (i1[i] != last) {
-					if (Arrays.binarySearch(i2, i1[i]) >= 0) {
-						intersection[n] = i1[i];
-						n++;
-					}
-					last = i1[i];
-				}
-			}
-		}
-		return new Integer1D(Arrays.copyOf(intersection, n));
-	}
-
-	//@Override
-	public boolean remove(Object o) {
-		if (!(o instanceof Integer0D)) {
-			throw new UnsupportedOperationException();
-		}
-		int i = ((Integer0D) o).value();
-		return this.remove(i);
-	}
-	
 	public boolean remove(int i) {
 		int[] newValue = new int[this.size()];
 		boolean found = false;
@@ -248,17 +172,16 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		return false;
 	}
 	
-	//@Override
-	public Integer0D set(int i, Integer0D t) throws IndexOutOfBoundsException {
+	public int set(int i, int t) throws IndexOutOfBoundsException {
 		if (i > this.size() || i < 0) {
 			throw new IndexOutOfBoundsException("Tried to set index out of range"); // FIXME
 		}
-		Integer0D oldValue = null;
+		Integer oldValue = null;
 		if (i == this.size()) {
 			this.add(t);
 		} else {
-			oldValue = this.get(i);
-			this.value()[i] = t.value();
+			oldValue = this.ints[i];
+			this.value()[i] = t;
 		}
 		if (this.which != null && !this.dirtyWhich) {
 			if (oldValue != null && this.which.containsKey(oldValue)) {
@@ -273,7 +196,7 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 			if (!this.which.containsKey(t)) {
 				this.which.put(t, new Integer1D());
 			}
-			this.which.get(t).add(new Integer0D(i));
+			this.which.get(t).add(i);
 		} else {
 			this.dirtyWhich = true;
 		}
@@ -304,146 +227,15 @@ public class Integer1D implements Numeric, Iterable<Integer0D> {
 		return new Integer1D(Arrays.copyOf(unique, iunique));
 	}
 
-	public Integer0D minNotIn(int a, int b) {
+	public int minNotIn(int a, int b) {
 		int[] values = Arrays.copyOf(this.value(), this.size());
 		Arrays.sort(values);
 		for (int v=a; v<=b; v++) {
 			if (Arrays.binarySearch(values, v) < 0) {
-				return new Integer0D(v);
+				return v;
 			}
 		}
-		return new Integer0D(b+1);
-	}
-	
-
-	//@Override
-	public String toString() {
-		String s = "";
-		String prefix = "";
-		for (int i=0; i < this.size(); i++) {
-			s = s + prefix + String.valueOf(this.value()[i]);
-			prefix = " ";
-		}
-		return s;
+		return b+1;
 	}
 
-	public Double1D toDouble1D() {
-		double[] ds = new double[this.size()];
-		for (int i=0; i<this.size(); i++) {
-			ds[i] = this.ints[i];
-		}
-		return new Double1D(ds);
-	}
-	
-	public Double1D mult(Double2D o) {
-		return this.toDouble1D().mult(o);
-	}
-	
-	//@Override
-	public Double1D rowVec() {
-		return this.toDouble1D();
-	}
-	
-	//@Override
-	public int length1D() {
-		return this.size();
-	}
-
-	public int getValue(int i) {
-		return this.value()[i];
-	}
-
-	public Integer1D samePairs() {
-		int n = this.size();
-		int nPairs = n*n - n*(n+1)/2;
-		int[] v = this.getInts();
-		int[] same = new int[nPairs];
-		int si = 0;
-		for (int i=0; i<n; i++) {
-			for (int j=(i+1); j<n; j++) {
-				if (v[i] == v[j]) {
-					same[si] = 1;
-				}
-				si++;
-			}
-		}
-		return new Integer1D(same);
-	}
-	
-	public Integer0D mode() {
-		int max = 0;
-		Integer1D items = this.items();
-		Integer0D mode = items.get(0);
-		for (Integer0D item : items) {
-			int size = this.getAll(this.which(item).value()).size();
-			if (size > max) {
-				mode = item;
-				max = size;
-			}
-		}
-		return mode;
-	}
-
-	public Integer1D getAllBut(int j) {
-		int[] d = this.value();
-		int[] all = new int[d.length-1];
-		for (int i=0; i<this.size(); i++) {
-			if (i < j) {
-				all[i] = d[i];
-			} else if (i > j) {
-				all[i-1] = d[i];
-			}
-		}
-		return new Integer1D(all);	
-	}
-	
-	public Integer2D outer(Integer1D o) {
-		double[] ot = new double[this.size()];
-		for (int i=0; i<this.ints.length; i++) {
-			ot[i] = this.ints[i];
-		}
-		double[] od = new double[o.size()];
-		int[] ov = o.value();
-		for (int i=0; i<ov.length; i++) {
-			od[i] = ov[i];
-		}
-		DoubleMatrix2D r = AlgebraStatic.multOuterStatic(new DenseDoubleMatrix1D(ot),
-														 new DenseDoubleMatrix1D(od));
-		int[][] ri = new int[this.size()][o.size()];
-		double[][] rd = r.toArray();
-		for (int i=0; i<this.ints.length; i++) {
-			for (int j=0; j<ov.length; j++) {
-				ri[i][j] = (int) rd[i][j];
-			}
-		}
-		return new Integer2D(ri);
-	}
-
-	public Integer0D sum() {
-		int s = 0;
-		for (int i=0; i<this.ints.length; i++) {
-			s += this.ints[i];
-		}
-		return new Integer0D(s);
-	}	
-	
-	public Iterator<Integer0D> iterator() {
-		return new Iterator<Integer0D>() {
-			private int curr = 0;
-
-			public boolean hasNext() {
-				return (this.curr < Integer1D.this.size());
-			}
-
-			public Integer0D next() {
-				Integer0D d = Integer1D.this.get(this.curr);
-				this.curr++;
-				return d;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		};
-	}
 }

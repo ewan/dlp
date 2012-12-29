@@ -1,8 +1,8 @@
 package org.jqgibbs.mathstat.probdist;
 
-import org.jqgibbs.mathstat.Numeric;
+import org.jqgibbs.Flattenable;
 
-public abstract class ProbDist<T extends Numeric> {
+public abstract class ProbDist<T extends Flattenable> {
 	protected static final boolean CHECK_PARMS = true;
 	protected boolean initialized;
 

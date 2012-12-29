@@ -4,7 +4,6 @@ import org.jqgibbs.RandomEngineSelector;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 
-import umontreal.iro.lecuyer.probdistmulti.MultiNormalDist;
 import umontreal.iro.lecuyer.randvar.NormalGen;
 import umontreal.iro.lecuyer.randvarmulti.MultinormalCholeskyGen;
 import umontreal.iro.lecuyer.rng.RandomStream;
@@ -13,7 +12,6 @@ public class MVNormalDist extends ProbDist<Double1D> {
 
 	private NormalGen normalGen;
 	private MultinormalCholeskyGen mvnGen;
-	private MultiNormalDist mvnDist;
 
 	private Double1D mu;
 	private Double2D Sg;
@@ -67,11 +65,9 @@ public class MVNormalDist extends ProbDist<Double1D> {
 			this.normalGen = new NormalGen(rs);
 			this.mvnGen = new MultinormalCholeskyGen(this.normalGen,
 					this.mu.value(), this.Sg.toColt());
-			this.mvnDist = new MultiNormalDist(this.mu.value(), this.Sg.value());
 		} else {
 			this.mvnGen.setMu(this.mu.value());
 			this.mvnGen.setSigma(this.Sg.toColt());
-			this.mvnDist.setParams(this.mu.value(), this.Sg.value());
 		}
 		this.SgInv = this.Sg.inverse();
 		

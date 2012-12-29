@@ -15,10 +15,6 @@ public abstract class Sampler {
 		this.current = initialLink;
 	}
 
-	public Model getModel() {
-		return this.model;
-	}
-	
 	public abstract ChainLink variate();
 
 	public ChainLink variateFast() {
