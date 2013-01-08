@@ -1,7 +1,5 @@
 package org.jqgibbs;
 
-
-
 public class GenericSampler extends Sampler {
 	
 	public GenericSampler(Model m) {

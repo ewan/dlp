@@ -315,7 +315,7 @@ public class FLGFDModel extends Model {
 
 		private Double2D omegaInv;
 
-		private HashMap<Integer, MVNormalDist> mvnDists = new HashMap<Integer, MVNormalDist>();
+		private HashMap<Integer, MVNormalDist> mvnDists;
 
 		public CRPDist(Double2D Psi, Double0D kappa, Double2D data) {
 			this.Psi = Psi;
@@ -420,6 +420,7 @@ public class FLGFDModel extends Model {
 
 		protected void setUpFromParms() {
 			this.omegaInv = this.Omega.inverse();
+			this.mvnDists = new HashMap<Integer,MVNormalDist>();
 		}
 
 		@Override
@@ -427,7 +428,7 @@ public class FLGFDModel extends Model {
 			// FIXME - This sampling scheme destructively modifies
 			// A, Sg - HACK
 			int N = this.Z.size();
-			Integer1D Z = new Integer1D(this.Z.value()); // FIXME
+			Integer1D Z = new Integer1D(this.Z.value().clone());
 			for (int i = 0; i < N; i++) {
 				Double1D Xi = this.data.get(i);
 				Integer1D active = Z.items();

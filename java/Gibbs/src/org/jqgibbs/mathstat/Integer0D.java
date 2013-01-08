@@ -2,7 +2,7 @@ package org.jqgibbs.mathstat;
 
 import org.jqgibbs.Flattenable;
 
-public class Integer0D implements Flattenable {
+public class Integer0D implements Flattenable,Cloneable {
 
 	private int i;
 	
@@ -25,6 +25,11 @@ public class Integer0D implements Flattenable {
 	@Override
 	public int hashCode() {
 		return this.value();
+	}
+	
+	@Override
+	public Object clone() {
+		return new Integer0D(this.value());
 	}
 	
 	public Double1D rowVec() {

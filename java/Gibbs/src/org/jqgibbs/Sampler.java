@@ -16,8 +16,4 @@ public abstract class Sampler {
 	}
 
 	public abstract ChainLink variate();
-
-	public ChainLink variateFast() {
-		return this.variate();
-	}
 }

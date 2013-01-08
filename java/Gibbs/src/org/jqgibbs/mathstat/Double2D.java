@@ -11,7 +11,7 @@ import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 import cern.colt.matrix.linalg.CholeskyDecomposition;
 import cern.colt.matrix.linalg.SingularValueDecomposition;
 
-public class Double2D implements Flattenable {
+public class Double2D implements Flattenable,Cloneable {
 	public static final double MAX_MATRIX_COND_NUM = 1e16;
 	
 	private DoubleMatrix2D dm;
@@ -79,6 +79,11 @@ public class Double2D implements Flattenable {
 	public int hashCode() {
 		return this.dm.hashCode();
 	}	
+	
+	@Override
+	public Object clone() {
+		return new Double2D(this.value());
+	}
 	
 	public DoubleMatrix2D getDm() {
 		return this.dm;

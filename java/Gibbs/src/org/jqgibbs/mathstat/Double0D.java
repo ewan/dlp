@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 import org.jqgibbs.Flattenable;
 
-public class Double0D implements Flattenable {
+public class Double0D implements Flattenable,Cloneable {
 	private static final int SCALE = 35;
 	private BigDecimal d;
 	private boolean dirty;
@@ -58,6 +58,11 @@ public class Double0D implements Flattenable {
 	@Override
 	public String toString() {
 		return String.valueOf(this.value());
+	}
+	
+	@Override
+	public Object clone() {
+		return new Double0D(this.value());
 	}
 	
 	// Convenience methods

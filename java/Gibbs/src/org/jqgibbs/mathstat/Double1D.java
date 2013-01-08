@@ -9,7 +9,7 @@ import cern.colt.matrix.DoubleMatrix1D;
 import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix1D;
 
-public class Double1D implements Flattenable {
+public class Double1D implements Flattenable,Cloneable {
 
 	private DoubleMatrix1D dm;
 	
@@ -57,6 +57,11 @@ public class Double1D implements Flattenable {
 		}
 		return s;
 	}	
+	
+	@Override
+	public Object clone() {
+		return new Double1D(this.value());
+	}
 	
 	public DoubleMatrix1D getDm() {
 		return this.dm;

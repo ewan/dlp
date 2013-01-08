@@ -8,7 +8,7 @@ import org.jqgibbs.Flattenable;
 import cern.colt.matrix.DoubleMatrix3D;
 import cern.colt.matrix.impl.DenseDoubleMatrix3D;
 
-public class Double3D implements Flattenable {
+public class Double3D implements Flattenable,Cloneable {
 	private DoubleMatrix3D dm;
 	
 	public Double3D(Double2D... d2Ds) {
@@ -73,6 +73,11 @@ public class Double3D implements Flattenable {
 	public int hashCode() {
 		return this.dm.hashCode();
 	}	
+	
+	@Override
+	public Object clone() {
+		return new Double3D(this.value());
+	}
 	
 	public boolean add(Double2D d2D) {
 		double[][][] ds = Arrays.copyOf(this.dm.toArray(), this.size()+1);

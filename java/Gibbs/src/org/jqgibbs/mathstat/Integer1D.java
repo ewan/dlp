@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.jqgibbs.Flattenable;
 
-public class Integer1D implements Flattenable {
+public class Integer1D implements Flattenable,Cloneable {
 
 	private int[] ints;
 	private boolean dirtyWhich;
@@ -71,6 +71,11 @@ public class Integer1D implements Flattenable {
 			prefix = " ";
 		}
 		return s;
+	}
+	
+	@Override
+	public Object clone() {
+		return new Integer1D(this.value());
 	}
 	
 	private synchronized void setInts(int[] ints) {
