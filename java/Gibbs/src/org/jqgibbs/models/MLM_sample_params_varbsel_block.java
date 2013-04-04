@@ -707,6 +707,7 @@ public class MLM_sample_params_varbsel_block extends Model {
 			Double2D[] xyʹ_γ = xyʹ_γs.get(γ);
 			for (int i = 0; i < N; i++) {
 				int rᵢ = z[i];
+				Double1D xᵢ_γ = X_γ.get(i);
 				Double2D Σᵢ = Σ.get(rᵢ);
 				Double2D Aᵢ = A.get(rᵢ);
 				Double2D Aᵢ_γ = Aᵢ.subMatrix(γ_indices, null);
@@ -718,47 +719,24 @@ public class MLM_sample_params_varbsel_block extends Model {
 					Integer1D zᵢ = new Integer1D(zᵢ_ints);
 					Integer1D Rᵢ = zᵢ.items();
 //		
-					double lil_curr = 0;
+					double ll_curr = 0;
 					double nc = 0;
 					for (int j_r=0; j_r<Rᵢ.size(); j_r++) {
 						int r = Rᵢ.value()[j_r];
 						int[] zᵣ = zᵢ.which(r).value();
-						
-						// Compute the posterior integrated likelihood for this category
 						int Nᵣ = zᵣ.length; // FIXME: sub-cache
-						Double2D Xᵣ_γ = X_γ.getAll(zᵣ);
-						Double2D Yᵣ = Y.getAll(zᵣ);
-						Double2D XᵣʹXᵣ_γ = Xᵣ_γ.transposeMult(Xᵣ_γ); // FIXME: sub-cache
-						Double2D YᵣʹYᵣ = Yᵣ.transposeMult(Yᵣ);  // FIXME: sub-cache
-						Double2D XᵣʹYᵣ_γ = Xᵣ_γ.transposeMult(Yᵣ); // FIXME: sub-cache
-//						
-						double κ_Nᵣ = κ+Nᵣ; // FIXME: sub-cache
-						double κ_Nᵣ_1 = κ_Nᵣ+1; // FIXME: sub-cache
-//						
-						Double2D Ωⁿ_XᵣʹXᵣ_γ = Ωⁿ_γ.plus(XᵣʹXᵣ_γ);
-						Double2D Ψ_A0ʹΩⁿA0_YᵣʹYᵣ_γ = Ψ_A0ʹΩⁿA0_γ.plus(YᵣʹYᵣ);
-						Double2D ΩⁿA0_XᵣʹYᵣ_γ = ΩⁿA0_γ.plus(XᵣʹYᵣ_γ);
-						Double2D ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ_γ = ΩⁿA0_XᵣʹYᵣ_γ.plus(xyʹ_γ[i]);
-//						
-						Double2D Ωᵥ_γ = Ωⁿ_XᵣʹXᵣ_γ.inverse();
-						Double2D Ωᵤᵥ_γ = Ωⁿ_XᵣʹXᵣ_γ.plus(xxʹ_γ[i]).inverse();
-						Double2D Ψᵥ_γ = Ψ_A0ʹΩⁿA0_YᵣʹYᵣ_γ.minus(ΩⁿA0_XᵣʹYᵣ_γ.transposeMult(Ωᵥ_γ.mult(ΩⁿA0_XᵣʹYᵣ_γ)));
-						Double2D Ψᵤᵥ_γ = Ψ_A0ʹΩⁿA0_YᵣʹYᵣ_γ.plus(yyʹ[i]).minus(ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ_γ.transposeMult(Ωᵤᵥ_γ.mult(ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ_γ)));
-//						
-						double ldet_Ωᵥ_γ = 0.5*p*Math.log(Ωᵥ_γ.det());
-						double ldet_Ωᵤᵥ_γ = 0.5*p*Math.log(Ωᵤᵥ_γ.det());
-						double ldet_Ψᵥ_γ = 0.5*κ_Nᵣ*Math.log(Ψᵥ_γ.det());
-						double ldet_Ψᵤᵥ_γ = 0.5*κ_Nᵣ_1*Math.log(Ψᵤᵥ_γ.det());	
-//
-						double lΓκ_Nᵣ = lΓ((κ_Nᵣ)/2, p); // FIXME: sub-cache
-						double lΓκ_Nᵣ_1 = lΓ((κ_Nᵣ_1)/2, p); // FIXME: sub-cache
-//						
-						double lil = Math.log(Nᵣ) + lΓκ_Nᵣ_1 + ldet_Ωᵤᵥ_γ + ldet_Ψᵥ_γ - lπ - lΓκ_Nᵣ - ldet_Ωᵥ_γ - ldet_Ψᵤᵥ_γ;
+						
+						Double1D Aᵣʹxᵢ_γ = Aᵢ_γ.transposeMult(xᵢ_γ);
+						Double1D yᵢ_Aᵣʹxᵢ_γ = Y.get(i).minus(Aᵣʹxᵢ_γ);
+							
+						double llik_e_term = -0.5*yᵢ_Aᵣʹxᵢ_γ.mult(Σ.get(r).inverse().mult(yᵢ_Aᵣʹxᵢ_γ));
+						double llik_nc_term = -l2π - 0.5*Math.log(Σ.get(r).det());
+						double ll = Math.log(Nᵣ) + llik_nc_term + llik_e_term;
 						
 						if (r == rᵢ) {
-							lil_curr = lil;
+							ll_curr = ll;
 						}
-						nc += Math.exp(lil);
+						nc += Math.exp(ll);
 					}
 					// Compute the 'new category' term
 					Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
@@ -769,13 +747,13 @@ public class MLM_sample_params_varbsel_block extends Model {
 					double ldet_Ψᵤ_γ = 0.5*κ_1*Math.log(Ψᵤ_γ.det());	
 					double prior_lil = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ_γ + ldet_Ωᵤ_γ - lπ - lΓκ - ldet_Ψᵤ_γ;
 					
-					double lil = lα + prior_lil;
-					nc += Math.exp(lil);	
+					double ll = lα + prior_lil;
+					nc += Math.exp(ll);	
 					if (zᵢ.which(rᵢ).size() == 0) {
-						lil_curr = lil;
+						ll_curr = ll;
 					}
 					
-					posterior += lil_curr - Math.log(nc);
+					posterior += ll_curr - Math.log(nc);
 				} else { // i == 0: probability 1
 					posterior += 0;
 				}
