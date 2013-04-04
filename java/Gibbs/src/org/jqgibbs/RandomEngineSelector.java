@@ -1,31 +1,44 @@
 package org.jqgibbs;
 
+import java.util.Date;
+
 import umontreal.iro.lecuyer.rng.RandomStream;
 import cern.jet.random.engine.MersenneTwister;
 import cern.jet.random.engine.RandomEngine;
 
 public class RandomEngineSelector {
-	private static final boolean fixedSeed = true;
+	private static boolean fixedSeed = false;
+	
 	private static RandomEngine engine = null;
 	private static RandomStream stream = null;
-
-	public static RandomEngine getEngine() {
-		if (engine == null) {
-			if (fixedSeed) {
-				engine = new MersenneTwister();
-			} else {
-				engine = RandomEngineSelector.getEngine();
+	
+	public static void setFixedSeed(boolean fixedSeed) {
+		if (fixedSeed != RandomEngineSelector.fixedSeed) {
+			RandomEngineSelector.fixedSeed = fixedSeed;
+			if (RandomEngineSelector.engine != null) {
+				RandomEngineSelector.engine = null;
+				RandomEngineSelector.stream = null;
 			}
 		}
-		return engine;
+	}
+
+	public static RandomEngine getEngine() {
+		if (RandomEngineSelector.engine == null) {
+			if (RandomEngineSelector.fixedSeed) {
+				RandomEngineSelector.engine = new MersenneTwister();
+			} else {
+				RandomEngineSelector.engine = new MersenneTwister(new Date());
+			}
+		}
+		return RandomEngineSelector.engine;
 	}
 
 	public static RandomStream getStream() {
-		if (stream == null) {
+		if (RandomEngineSelector.stream == null) {
 			RandomEngine e = RandomEngineSelector.getEngine();
-			stream = new RandomEngineStream(e);
+			RandomEngineSelector.stream = new RandomEngineStream(e);
 		}
-		return stream;
+		return RandomEngineSelector.stream;
 	}
 
 	protected static class RandomEngineStream implements RandomStream {

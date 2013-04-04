@@ -14,7 +14,6 @@ public abstract class ProbDistMC<T extends Flattenable> extends ProbDist<T> {
 	
 	@Override
 	protected double getLogDensity(T x) {
-		// FIXME
-		throw new UnsupportedOperationException("Too lazy, come back later");
+		throw new UnsupportedOperationException("Distribution does not provide density function");
 	}
 }

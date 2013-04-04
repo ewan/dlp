@@ -5,8 +5,10 @@ import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix2D;
 import cern.jet.math.Functions;
 
-public class AlgebraStatic extends cern.colt.matrix.linalg.Algebra {
+public final class AlgebraStatic extends cern.colt.matrix.linalg.Algebra {
 
+	private AlgebraStatic() {}
+	
 	private static cern.colt.matrix.linalg.Algebra a = new cern.colt.matrix.linalg.Algebra();
 
 	private static final long serialVersionUID = 7354941851041130909L;

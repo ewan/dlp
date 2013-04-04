@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.jqgibbs.mathstat.probdist.ProbDist;
 import org.jqgibbs.mathstat.probdist.ProbDistMC;
 
-public class RandomVar<T extends Flattenable & Cloneable> {
+public class RandomVar<T extends Flattenable> {
 	private String name;
 	private ProbDistMC<T> posterior;
 	private T numericValue;
@@ -16,8 +16,13 @@ public class RandomVar<T extends Flattenable & Cloneable> {
 		this.numericValue = t;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void updatePosterior(ChainLink l) {
-		this.numericValue = this.posterior.variate(l);
+		if (this.posterior == null) {
+			this.numericValue = (T) this.numericValue.clone();
+		} else {
+			this.numericValue = this.posterior.variate(l);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

@@ -23,9 +23,10 @@ import org.jqgibbs.mathstat.probdist.MatrixNormalDist;
 import org.jqgibbs.mathstat.probdist.ProbDistMC;
 
 import cern.colt.matrix.impl.DenseDoubleMatrix3D;
+import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 import cern.jet.stat.Gamma;
 
-public class MLM_sample_params extends Model {
+public class MLM_sample_params_varbsel_crazy extends Model {
 
 	private static double lΓ(double x, int p) {
 		double r = 0.25*p*(p-1)*Math.log(Math.PI);
@@ -37,6 +38,11 @@ public class MLM_sample_params extends Model {
 	
 	public static Map<String,Object> extend_hypers(Map<String,Flattenable> hypers, Double2D Y, Double2D X) {
 		Map<String,Object> extended_hypers = new HashMap<String,Object>();
+		
+		Double τ = ((Double0D) hypers.get("tau")).value();
+		extended_hypers.put("τ", τ);
+		extended_hypers.put("lτ", Math.log(τ));
+		extended_hypers.put("lτʹ", Math.log(1-τ));
 		
 		Double0D κ = (Double0D) hypers.get("kappa");
 		extended_hypers.put("κ", κ);
@@ -55,9 +61,13 @@ public class MLM_sample_params extends Model {
 		extended_hypers.put("h", h);
 		
 		Double2D Sⁿ = ((Double2D) hypers.get("S")).inverse();
-		Double1D vecW = ((Double2D) hypers.get("W")).colVec();
+		Double2D W = (Double2D) hypers.get("W");
+		Double1D vecW = W.colVec();
 		Double2D Sⁿ_kr_Ih = Sⁿ.kron(Double2D.ident(h));
 		Double1D Sⁿ_kr_Ih_vW = Sⁿ_kr_Ih.mult(vecW);
+		extended_hypers.put("Sⁿ", Sⁿ);
+		extended_hypers.put("W", W);
+		extended_hypers.put("ldet_Sⁿ", Math.log(Sⁿ.det()));
 		extended_hypers.put("Sⁿ_kr_Ih", Sⁿ_kr_Ih);
 		extended_hypers.put("Sⁿ_kr_Ih_vW", Sⁿ_kr_Ih_vW);
 		
@@ -90,15 +100,101 @@ public class MLM_sample_params extends Model {
 		
 		return extended_hypers;
 	}	
+	
+	class PostGammaDist extends ProbDistMC<Integer1D> {
+		// Fixed parameters 
+		Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Sⁿ");
+		double ldet_Sⁿ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("ldet_Sⁿ");
+		Double2D Φ = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Φ");
+		Double2D W = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("W");
+		double λ = ((Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("λ")).value();
+		double τ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("τ");
+		double lτ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("lτ");
+		double lτʹ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("lτʹ");
+		int h = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("h");
+		int p = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("p");
+		double l2π = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("l2π");
+		
+		// Chain parameters
+		Double2D Ω;
+		Integer1D γ;
+		Double2D A0_W;
+		
+		CategoricalDist catDist = new CategoricalDist();
+		
+		public PostGammaDist() { }
+		
+		@Override
+		public void setMCState(ChainLink l) {
+			this.Ω = (Double2D) l.get("Omega").getNumericValue();
+			this.γ = (Integer1D) l.get("gamma").getNumericValue();
+			this.A0_W = ((Double2D) l.get("A0").getNumericValue()).minus(W);
+		}
+		
+		@Override
+		public Integer1D genVariate() {
+			Integer1D γ = new Integer1D(this.γ.value().clone());
+			
+			double[] logP = new double[2];
+			double maxLogP;
+			
+			for (int i=1; i<h; i++) {
+				int γᵢ = γ.value()[i];
+				int[] γ_indices_curr = γ.which(1).items().value();
+				
+				if (γᵢ == 0) {
+					γ.set(i,1);
+				} else {
+					γ.set(i,0);
+				}
+				int[] γ_indices_alt = γ.which(1).items().value();
+				
+				Double2D Ω_curr = Ω.subMatrix(γ_indices_curr,γ_indices_curr);
+				Double2D Ω_alt = Ω.subMatrix(γ_indices_alt,γ_indices_alt);
+				Double2D Φ_curr = Φ.subMatrix(γ_indices_curr,γ_indices_curr);
+				Double2D Φ_alt = Φ.subMatrix(γ_indices_alt,γ_indices_alt);
+				Double2D A0_W_curr = A0_W.subMatrix(γ_indices_curr,null);
+				Double2D A0_W_alt = A0_W.subMatrix(γ_indices_alt,null);
+				int h_curr = γ_indices_curr.length;
+				int h_alt = γ_indices_alt.length;
+				double λ_curr = λ - (h - h_curr);
+				double λ_alt = λ - (h - h_alt);
+				
+				double lp_curr = 0.5*λ_curr*Math.log(Φ_curr.det()) - 0.5*(λ_curr+h_curr+1)*Math.log(Ω_curr.det()) - 0.5*h_curr*λ_curr*Math.log(2) - lΓ(λ_curr/2.0,h_curr) - 0.5*Φ_curr.mult(Ω_curr.inverse()).trace().value()
+							   - h_curr*l2π + 0.5*h_curr*ldet_Sⁿ - 0.5*Sⁿ.mult(A0_W_curr.transposeMult(A0_W_curr)).trace().value(); // Forget log(1)!
+				double lp_alt = 0.5*λ_alt*Math.log(Φ_alt.det()) - 0.5*(λ_alt+h_alt+1)*Math.log(Ω_alt.det()) - 0.5*h_alt*λ_alt*Math.log(2) - lΓ(λ_alt/2.0,h_alt) - 0.5*Φ_alt.mult(Ω_alt.inverse()).trace().value()
+							   - h_alt*l2π + 0.5*h_alt*ldet_Sⁿ - 0.5*Sⁿ.mult(A0_W_alt.transposeMult(A0_W_alt)).trace().value();
+				
+				if (γᵢ == 0) {
+					logP[0] = lτʹ + lp_curr;
+					logP[1] = lτ + lp_alt;
+				} else {
+					logP[0] = lτʹ + lp_alt;
+					logP[1] = lτ + lp_curr;
+				} 
+				
+				// Sample
+				maxLogP = logP[0] > logP[1] ? logP[0] : logP[1];
+				catDist.setParms((new Double1D(logP)).minus(maxLogP).exp());
+				γ.set(i,catDist.variate().value());
+				
+			}
+			return γ;
+		}
+	}
 
 	class PostOmegaDist extends ProbDistMC<Double2D> {
 		// Fixed parameters
-		Double2D Φ = (Double2D) MLM_sample_params.this.extended_hypers.get("Φ");
-		Double0D λ = (Double0D) MLM_sample_params.this.extended_hypers.get("λ");
-		int p = (Integer) MLM_sample_params.this.extended_hypers.get("p");
-		int N = (Integer) MLM_sample_params.this.extended_hypers.get("N");
+		Double2D Φ = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Φ");
+		Double0D λ = (Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("λ");
+		int p = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("p");
+		int N = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("N");
 
 		// Chain parameters
+		Integer1D γ;
+		Double2D Φ_γ;
+		Double0D λ_γ;
+		int p_γ;
 		Integer1D R;
 		Double3D Σ;
 		Double3D A;
@@ -114,6 +210,13 @@ public class MLM_sample_params extends Model {
 			this.Σ = (Double3D) l.get("Sigma").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
 			this.A0 = (Double2D) l.get("A0").getNumericValue();
+			
+//			this.γ = (Integer1D) l.get("gamma").getNumericValue();
+//			int[] γ_indices = γ.which(1).value();
+//			Φ_γ = Φ.subMatrix(γ_indices,γ_indices);
+//			p_γ = γ_indices.length;
+//			λ_γ = λ - (p - p_γ);
+//							
 			this.initialized = true;
 		}
 
@@ -134,20 +237,22 @@ public class MLM_sample_params extends Model {
 
 	class PostSigmaDist extends ProbDistMC<Double3D> {
 		// Fixed parameters
-		private Double0D κ = (Double0D) MLM_sample_params.this.extended_hypers.get("κ");
-		private int p = (Integer) MLM_sample_params.this.extended_hypers.get("p");
-		private Double2D Ψ = (Double2D) MLM_sample_params.this.extended_hypers.get("Ψ");
-		private Double2D Y = (Double2D) MLM_sample_params.this.extended_hypers.get("Y");
-		private Double2D X = (Double2D) MLM_sample_params.this.extended_hypers.get("X");
+		private Double0D κ = (Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("κ");
+		private int p = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("p");
+		private Double2D Ψ = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Ψ");
+		private Double2D Y = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Y");
+		private Double2D X = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("X");
 
 		// Chain parameters
-		private Double2D Ωⁿ;
-		private Double2D A0;
-		private Double2D ΩⁿA0;
-		private Double2D Ψ_A0ʹΩⁿA0;
+		private Double2D X_γ;
+		private Double2D Ωⁿ_γ;
+		private Double2D A0_γ;
+		private Double2D ΩⁿA0_γ;
+		private Double2D Ψ_A0ʹΩⁿA0_γ;
 		private Integer1D z;
 		private Integer1D R;
 		private int max_r;
+		private int[] γ_indices;
 		
 		private InverseWishartDist iwDist = new InverseWishartDist();
 
@@ -155,10 +260,12 @@ public class MLM_sample_params extends Model {
 
 		@Override
 		public void setMCState(ChainLink l) {
-			this.Ωⁿ = ((Double2D) l.get("Omega").getNumericValue()).inverse();
-			this.A0 = (Double2D) l.get("A0").getNumericValue();
-			this.ΩⁿA0 = Ωⁿ.mult(A0);
-			this.Ψ_A0ʹΩⁿA0 = Ψ.plus(A0.transposeMult(ΩⁿA0)); 
+			this.γ_indices = ((Integer1D) l.get("gamma").getNumericValue()).which(1).value();
+			this.X_γ = X.subMatrix(null, γ_indices);
+			this.Ωⁿ_γ = ((Double2D) l.get("Omega").getNumericValue()).subMatrix(γ_indices, γ_indices).inverse();
+			this.A0_γ = ((Double2D) l.get("A0").getNumericValue()).subMatrix(γ_indices, null);
+			this.ΩⁿA0_γ = Ωⁿ_γ.mult(A0_γ);
+			this.Ψ_A0ʹΩⁿA0_γ = Ψ.plus(A0_γ.transposeMult(ΩⁿA0_γ)); 
 			this.z = (Integer1D) l.get("z").getNumericValue();
 			this.R = z.items();
 			this.max_r = R.value()[R.size()-1];
@@ -175,18 +282,18 @@ public class MLM_sample_params extends Model {
 				int[] zᵣ = z.which(r).value();
 				int Nᵣ = zᵣ.length; 
 				
-				Double2D Xᵣ = X.getAll(zᵣ);
+				Double2D Xᵣ_γ = X_γ.getAll(zᵣ);
 				Double2D Yᵣ = Y.getAll(zᵣ);
 				
-				Double2D XᵣʹXᵣ = Xᵣ.transposeMult(Xᵣ); // FIXME: here - extended chain
-				Double2D XᵣʹYᵣ = Xᵣ.transposeMult(Yᵣ); // FIXME: here - extended chain
+				Double2D XᵣʹXᵣ_γ = Xᵣ_γ.transposeMult(Xᵣ_γ); // FIXME: here - extended chain
+				Double2D XᵣʹYᵣ_γ = Xᵣ_γ.transposeMult(Yᵣ); // FIXME: here - extended chain
 				Double2D YᵣʹYᵣ = Yᵣ.transposeMult(Yᵣ); // FIXME: here - extended chain
 				
-				Double2D Ωⁿ_XᵣʹXᵣ = Ωⁿ.plus(XᵣʹXᵣ);
-				Double2D ΩⁿA0_XᵣʹYᵣ = ΩⁿA0.plus(XᵣʹYᵣ);
-				Double2D Ψᵣᵤ = Ψ_A0ʹΩⁿA0.plus(YᵣʹYᵣ).minus(ΩⁿA0_XᵣʹYᵣ.transposeMult(Ωⁿ_XᵣʹXᵣ.inverse().mult(ΩⁿA0_XᵣʹYᵣ)));
+				Double2D Ωⁿ_XᵣʹXᵣ_γ = Ωⁿ_γ.plus(XᵣʹXᵣ_γ);
+				Double2D ΩⁿA0_XᵣʹYᵣ_γ = ΩⁿA0_γ.plus(XᵣʹYᵣ_γ);
+				Double2D Ψᵣᵤ_γ = Ψ_A0ʹΩⁿA0_γ.plus(YᵣʹYᵣ).minus(ΩⁿA0_XᵣʹYᵣ_γ.transposeMult(Ωⁿ_XᵣʹXᵣ_γ.inverse().mult(ΩⁿA0_XᵣʹYᵣ_γ)));
 				
-				iwDist.setParms(Ψᵣᵤ, κ.plus(Nᵣ));
+				iwDist.setParms(Ψᵣᵤ_γ, κ.plus(Nᵣ));
 				Double2D Σᵣ = iwDist.variate();
 				
 				int slice = r; // FIXME: this is what you would change for "compression"
@@ -203,29 +310,48 @@ public class MLM_sample_params extends Model {
 
 	class PostADist extends ProbDistMC<Double3D> {
 		// Fixed parameters
-		private int p = (Integer) MLM_sample_params.this.extended_hypers.get("p");
-		private int h = (Integer) MLM_sample_params.this.extended_hypers.get("h");
-		private Double2D Y = ((Double2D) MLM_sample_params.this.extended_hypers.get("Y"));
-		private Double2D X = ((Double2D) MLM_sample_params.this.extended_hypers.get("X"));
+		private int p = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("p");
+		private int h = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("h");
+		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Y"));
+		private Double2D X = ((Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("X"));
 
 		// Chain parameters
+		private Double2D X_γ;
 		private Integer1D z;
-		private Double2D Ωⁿ;
+		private Double2D Ωⁿ_γ;
 		private Double3D Σ;
-		private Double2D A0;
-		private Double2D ΩⁿA0;
+		private Double2D A0_γ;
+		private Double2D A0_γʹ;
+		private Double2D ΩⁿA0_γ;
+		private Double2D Ω_bdi;
+		private Double2D Ω_schur;
 		private Integer1D R;
 		private int max_r;
+		private int[] γ_indices;
+		private int[] γʹ_indices;
 		
-		private MatrixNormalDist mnDist = new MatrixNormalDist();
+		private MatrixNormalDist mnDist_γ;
+		private MatrixNormalDist mnDist_γʹ;
 
 		public PostADist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
-			this.A0 = (Double2D) l.get("A0").getNumericValue();
-			this.Ωⁿ = ((Double2D) l.get("Omega").getNumericValue()).inverse();
-			this.ΩⁿA0 = Ωⁿ.mult(A0);
+			this.γ_indices = ((Integer1D) l.get("gamma").getNumericValue()).which(1).value();
+			this.γʹ_indices = ((Integer1D) l.get("gamma").getNumericValue()).which(0).value();
+			this.X_γ = X.subMatrix(null,γ_indices);
+			this.A0_γ = ((Double2D) l.get("A0").getNumericValue()).subMatrix(γ_indices, null);
+			this.Ωⁿ_γ = ((Double2D) l.get("Omega").getNumericValue()).subMatrix(γ_indices,γ_indices).inverse();
+			this.ΩⁿA0_γ = Ωⁿ_γ.mult(A0_γ);
+			int h_γ = γ_indices.length;
+			int h_γʹ = γʹ_indices.length;
+			this.mnDist_γ = new MatrixNormalDist(new Double2D(new SparseDoubleMatrix2D(h_γ,p)),Double2D.ident(p),Double2D.ident(h_γ));			
+			if (γʹ_indices.length > 0) {
+				this.mnDist_γʹ = new MatrixNormalDist(new Double2D(new SparseDoubleMatrix2D(h_γʹ,p)),Double2D.ident(p),Double2D.ident(h_γʹ));
+				this.A0_γʹ = ((Double2D) l.get("A0").getNumericValue()).subMatrix(γʹ_indices, null);
+				this.Ω_bdi = ((Double2D) l.get("Omega").getNumericValue()).blockBDInv(γ_indices, γʹ_indices);
+				this.Ω_schur = ((Double2D) l.get("Omega").getNumericValue()).schur(γ_indices, γʹ_indices);
+			}
 			this.Σ = (Double3D) l.get("Sigma").getNumericValue();
 			this.z = (Integer1D) l.get("z").getNumericValue();
 			this.R = z.items();
@@ -242,22 +368,39 @@ public class MLM_sample_params extends Model {
 			for (rj=0; rj<R.size(); rj++) {
 				int r = R.value()[rj];
 				int[] zᵣ = z.which(r).value();
-				Double2D Xᵣ = X.getAll(zᵣ);
+				Double2D Xᵣ_γ = X_γ.getAll(zᵣ);
 				Double2D Yᵣ = Y.getAll(zᵣ);
 				
-				Double2D XᵣʹXᵣ = Xᵣ.transposeMult(Xᵣ); // FIXME: here - extended chain
-				Double2D Ωᵣᵤ = Ωⁿ.plus(XᵣʹXᵣ).inverse(); 
+				// Step 1: γ-reduced: posterior
+				Double2D XᵣʹXᵣ_γ = Xᵣ_γ.transposeMult(Xᵣ_γ); // FIXME: here - extended chain
+				Double2D Ωᵣᵤ_γ = Ωⁿ_γ.plus(XᵣʹXᵣ_γ).inverse(); 
 				
-				Double2D XᵣʹYᵣ = Xᵣ.transposeMult(Yᵣ); // FIXME: here - extended chain
-				Double2D Α0ᵣᵤ = Ωᵣᵤ.mult(XᵣʹYᵣ.plus(ΩⁿA0));
+				Double2D XᵣʹYᵣ_γ = Xᵣ_γ.transposeMult(Yᵣ); // FIXME: here - extended chain
+				Double2D Α0ᵣᵤ_γ = Ωᵣᵤ_γ.mult(XᵣʹYᵣ_γ.plus(ΩⁿA0_γ));
 				
-				mnDist.setParms(Α0ᵣᵤ, Σ.get(r), Ωᵣᵤ);
-				Double2D Aᵣ = mnDist.variate();
+				mnDist_γ.setParms(Α0ᵣᵤ_γ, Σ.get(r), Ωᵣᵤ_γ);
+				Double2D Aᵣ_γ = mnDist_γ.variate();
 				
 				int slice = r; // FIXME: this is what you would change for "compression"
-				for (int row=0; row<h; row++) {
+				int row_Aᵣ_γ = 0;
+				for (int row : γ_indices) {
 					for (int col=0; col<p; col++) {
-						A.setQuick(slice, row, col, Aᵣ.getDm().getQuick(row, col));
+						A.setQuick(slice, row, col, Aᵣ_γ.getDm().getQuick(row_Aᵣ_γ, col));
+					}
+					row_Aᵣ_γ++;
+				}
+				
+				// Step 2: Fill in from prior
+				if (γʹ_indices.length > 0) {
+					Double2D A0ᵤ_γʹ = A0_γʹ.minus(Ω_bdi.mult(Aᵣ_γ.minus(A0_γ))); 
+					mnDist_γʹ.setParms(A0ᵤ_γʹ, Σ.get(r), Ω_schur);
+					Double2D Aᵣ_γʹ = mnDist_γʹ.variate();	
+					int row_Aᵣ_γʹ = 0;
+					for (int row : γʹ_indices) {
+						for (int col=0; col<p; col++) {
+							A.setQuick(slice, row, col, Aᵣ_γʹ.getDm().getQuick(row_Aᵣ_γʹ, col));
+						}
+						row_Aᵣ_γʹ++;
 					}
 				}
 			}
@@ -268,71 +411,99 @@ public class MLM_sample_params extends Model {
 
 	class CRPDist extends ProbDistMC<Integer1D> {
 		// Fixed parameters
-		private Double0D κ_1 = ((Double0D) MLM_sample_params.this.extended_hypers.get("κ_1"));
-		private Double2D Ψ = ((Double2D) MLM_sample_params.this.extended_hypers.get("Ψ"));
+		private Double0D κ_1 = ((Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("κ_1"));
+		private Double2D Ψ = ((Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Ψ"));
 		
-		double ldet_Ψ = (Double) (MLM_sample_params.this.extended_hypers.get("ldet_Ψ"));
-		private double lπ = (Double) MLM_sample_params.this.extended_hypers.get("lπ");
-		private double l2π = (Double) MLM_sample_params.this.extended_hypers.get("l2π");
-		private int N = (Integer) MLM_sample_params.this.extended_hypers.get("N");
-		private int p = (Integer) MLM_sample_params.this.extended_hypers.get("p");
-		private Double2D X = ((Double2D) MLM_sample_params.this.extended_hypers.get("X"));
-		private Double2D Y = ((Double2D) MLM_sample_params.this.extended_hypers.get("Y"));
-		private Double2D[] xxʹ = (Double2D[]) MLM_sample_params.this.extended_hypers.get("xxʹ");
-		private Double2D[] xyʹ = (Double2D[]) MLM_sample_params.this.extended_hypers.get("xyʹ");
-		private Double2D[] yyʹ = (Double2D[]) MLM_sample_params.this.extended_hypers.get("yyʹ");
-		private double lΓκ = (Double) MLM_sample_params.this.extended_hypers.get("lΓκ");
-		private double lΓκ_1 = (Double) MLM_sample_params.this.extended_hypers.get("lΓκ_1");
+		double ldet_Ψ = (Double) (MLM_sample_params_varbsel_crazy.this.extended_hypers.get("ldet_Ψ"));
+		private double lπ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("lπ");
+		private double l2π = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("l2π");
+		private int N = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("N");
+		private int p = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("p");
+		private Double2D X = ((Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("X"));
+		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Y"));
+		private Double2D[] xxʹ = (Double2D[]) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("xxʹ");
+		private Double2D[] xyʹ = (Double2D[]) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("xyʹ");
+		private Double2D[] yyʹ = (Double2D[]) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("yyʹ");
+		private double lΓκ = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("lΓκ");
+		private double lΓκ_1 = (Double) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("lΓκ_1");
 		
 		private Map<Integer,Integer> Nᵣ = new HashMap<Integer,Integer>();
 		
 		// Chain parameters
+		private Double2D X_γ;
 		private Double2D A0;
-		private Double2D Ωⁿ;
-		private Double2D ΩⁿA0;
-		private Double2D Ψ_A0ʹΩⁿA0;
+		private Double2D A0_γ;
+		private Double2D A0_γʹ;
+		private Double2D Ωⁿ_γ;
+		private Double2D ΩⁿA0_γ;
+		private Double2D Ω_bdi;
+		private Double2D Ω_schur;
+		private Double2D Ψ_A0ʹΩⁿA0_γ;
 		private Double3D Σ;
 		private Double3D A;
 		private Integer1D z;
 		private Double0D α;
+		private Double2D[] xxʹ_γ = new Double2D[N];
+		private Double2D[] xyʹ_γ = new Double2D[N];
+		private int[] γ_indices;
+		private int[] γʹ_indices;
 		private double[] prior_lil = new double[N];
 
 		private Double1D postProb;
 		private CategoricalDist catDist = new CategoricalDist();
 		private InverseWishartDist iwDist = new InverseWishartDist();
-		private MatrixNormalDist mnDist = new MatrixNormalDist();
+		private MatrixNormalDist mnDist_γ;
+		private MatrixNormalDist mnDist_γʹ;
 
 		public CRPDist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
+			this.γ_indices = ((Integer1D) l.get("gamma").getNumericValue()).which(1).value();
+			this.γʹ_indices = ((Integer1D) l.get("gamma").getNumericValue()).which(0).value();
+			this.X_γ = X.subMatrix(null, γ_indices);
 			this.A0 = (Double2D) l.get("A0").getNumericValue();
-			this.Ωⁿ = ((Double2D) l.get("Omega").getNumericValue()).inverse();
-			this.ΩⁿA0 = Ωⁿ.mult(A0);
-			this.Ψ_A0ʹΩⁿA0 = Ψ.plus(A0.transposeMult(ΩⁿA0)); 
+			this.A0_γ = A0.subMatrix(γ_indices, null);
+			this.Ωⁿ_γ = ((Double2D) l.get("Omega").getNumericValue()).subMatrix(γ_indices, γ_indices);
+			this.ΩⁿA0_γ = Ωⁿ_γ.mult(A0_γ);
+			int h_γ = γ_indices.length;
+			int h_γʹ = γʹ_indices.length;
+			this.mnDist_γ = new MatrixNormalDist(new Double2D(new SparseDoubleMatrix2D(h_γ,p)),Double2D.ident(p),Double2D.ident(h_γ));
+			if (γʹ_indices.length > 0) {
+				this.mnDist_γʹ = new MatrixNormalDist(new Double2D(new SparseDoubleMatrix2D(h_γʹ,p)),Double2D.ident(p),Double2D.ident(h_γʹ));
+				this.A0_γʹ = A0.subMatrix(γʹ_indices, null);
+				this.Ω_bdi = ((Double2D) l.get("Omega").getNumericValue()).blockBDInv(γ_indices, γʹ_indices);
+				this.Ω_schur = ((Double2D) l.get("Omega").getNumericValue()).schur(γ_indices, γʹ_indices);
+			}
+			this.Ψ_A0ʹΩⁿA0_γ = Ψ.plus(A0_γ.transposeMult(ΩⁿA0_γ)); 
 			this.Σ = (Double3D) l.get("Sigma").getNumericValue();
 			this.A = (Double3D) l.get("A").getNumericValue();
 			this.z = (Integer1D) l.get("z").getNumericValue();
 			this.α = (Double0D) l.get("alpha").getNumericValue();
 			
-			double ldet_Ωⁿ = 0.5*p*Math.log(Ωⁿ.det());	
+			double ldet_Ωⁿ = 0.5*p*Math.log(Ωⁿ_γ.det());	
 			for (int i=0; i<N; i++) {
 				Double1D xᵢ = X.get(i);
+				Double1D xᵢ_γ = X_γ.get(i);
 				Double1D yᵢ = Y.get(i);
 				
 				xxʹ[i] = xᵢ.outer(xᵢ);
 				xyʹ[i] = xᵢ.outer(yᵢ);
 				yyʹ[i] = yᵢ.outer(yᵢ);
 				
-				Double2D Ωᵤ = Ωⁿ.plus(xxʹ[i]).inverse();
-				Double2D ΩⁿA0_xᵢyᵢʹ = ΩⁿA0.plus(xyʹ[i]);
-				Double2D Ψᵤ = Ψ_A0ʹΩⁿA0.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ.transposeMult(Ωᵤ).mult(ΩⁿA0_xᵢyᵢʹ));
+				xxʹ_γ[i] = xᵢ_γ.outer(xᵢ_γ);
+				xyʹ_γ[i] = xᵢ_γ.outer(yᵢ);
+				
+				Double2D Ωᵤ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
+				Double2D ΩⁿA0_xᵢyᵢʹ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
+				Double2D Ψᵤ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ.transposeMult(Ωᵤ).mult(ΩⁿA0_xᵢyᵢʹ));
 				
 				double ldet_Ωᵤ = 0.5*p*Math.log(Ωᵤ.det());
 				double ldet_Ψᵤ = 0.5*κ_1.value()*Math.log(Ψᵤ.det());				
 				
 				prior_lil[i] = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ + ldet_Ωᵤ - lπ - lΓκ - ldet_Ψᵤ;
 			}		
+			
 			
 			this.initialized = true;
 		}
@@ -341,7 +512,6 @@ public class MLM_sample_params extends Model {
 			this.catDist.setParms(this.postProb);
 			return this.catDist.variate();
 		}
-
 
 		@Override
 		protected Integer1D genVariate() {
@@ -374,7 +544,7 @@ public class MLM_sample_params extends Model {
 				for (rj=0; rj<R.size(); rj++) {
 					int r = R.value()[rj];
 					
-					Double1D Aᵣʹxᵢ = A.get(r).transposeMult(X.get(i));
+					Double1D Aᵣʹxᵢ = A.get(r).sparsifyRows(γ_indices).transposeMult(X.get(i));
 					Double1D yᵢ_Aᵣʹxᵢ = Y.get(i).minus(Aᵣʹxᵢ);
 					double llik_e_term = -0.5*yᵢ_Aᵣʹxᵢ.mult(Σ.get(r).inverse().mult(yᵢ_Aᵣʹxᵢ));
 					double llik_nc_term = -l2π - 0.5*Math.log(Σ.get(r).det());
@@ -416,15 +586,25 @@ public class MLM_sample_params extends Model {
 				
 				// Sample new category if necessary
 				if (zi_new_rjindex == newc_rjindex) {
-					Double2D ΩⁿA0_xᵢyᵢʹ = ΩⁿA0.plus(xyʹ[i]);
-					Double2D Ωᵤ = Ωⁿ.plus(xxʹ[i]).inverse();
-					Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ = Ωᵤ.mult(ΩⁿA0_xᵢyᵢʹ);
-					Double2D Ψᵤ = Ψ_A0ʹΩⁿA0.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ));
+					// Sample Σ
+					Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
+					Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
+					Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ = Ωᵤ_γ.mult(ΩⁿA0_xᵢyᵢʹ_γ);
+					Double2D Ψᵤ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ_γ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ));
 					iwDist.setParms(Ψᵤ, κ_1);
 					Double2D Σᵢ = iwDist.variate();
-					mnDist.setParms(Ωᵤ_ΩⁿA0_xᵢyᵢʹ, Σᵢ, Ωᵤ);
-					Double2D Aᵢ = mnDist.variate();
-					A.set(zi_new_value, Aᵢ);
+					// Step 1: sample the γ-reduced part of A from the posterior given point i
+					mnDist_γ.setParms(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ, Σᵢ, Ωᵤ_γ);
+					Double2D Aᵢ_γ = mnDist_γ.variate();
+					// Step 2: sample the rest of A from the prior conditional on the γ-reduced part
+					if (γʹ_indices.length > 0) {
+						Double2D A0ᵤ_γʹ = A0_γʹ.minus(Ω_bdi.mult(Aᵢ_γ.minus(A0_γ))); 
+						mnDist_γʹ.setParms(A0ᵤ_γʹ, Σᵢ, Ω_schur);
+						Double2D Aᵢ_γʹ = mnDist_γʹ.variate();
+						A.set(zi_new_value, Aᵢ_γ.interleaveRows(Aᵢ_γʹ, γ_indices, γʹ_indices));
+					} else {
+						A.set(zi_new_value, Aᵢ_γ);
+					}
 					Σ.set(zi_new_value, Σᵢ);
 				}
 				
@@ -450,9 +630,9 @@ public class MLM_sample_params extends Model {
 
 	class PostA0Dist extends ProbDistMC<Double2D> {
 		// Fixed parameters
-		private Double2D Sⁿ_kr_Ih = (Double2D) MLM_sample_params.this.extended_hypers.get("Sⁿ_kr_Ih");
-		private Double1D Sⁿ_kr_Ih_vW = (Double1D) MLM_sample_params.this.extended_hypers.get("Sⁿ_kr_Ih_vW");
-		private int h = (Integer) MLM_sample_params.this.extended_hypers.get("h");
+		private Double2D Sⁿ_kr_Ih = (Double2D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Sⁿ_kr_Ih");
+		private Double1D Sⁿ_kr_Ih_vW = (Double1D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("Sⁿ_kr_Ih_vW");
+		private int h = (Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("h");
 		private MVNormalDist mvnDist = new MVNormalDist();
 
 		// Chain parameters
@@ -497,9 +677,9 @@ public class MLM_sample_params extends Model {
 		private CategoricalDist catDist = new CategoricalDist();
 
 		// Fixed parameters
-		private Double0D alpha_a = (Double0D) MLM_sample_params.this.extended_hypers.get("alpha_a");
-		private Double0D alpha_b = (Double0D) MLM_sample_params.this.extended_hypers.get("alpha_b");
-		private Double0D N = new Double0D((Integer) MLM_sample_params.this.extended_hypers.get("N")); 
+		private Double0D alpha_a = (Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("alpha_a");
+		private Double0D alpha_b = (Double0D) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("alpha_b");
+		private Double0D N = new Double0D((Integer) MLM_sample_params_varbsel_crazy.this.extended_hypers.get("N")); 
 
 		// Chain parameters
 		private Double0D α;
@@ -707,18 +887,18 @@ public class MLM_sample_params extends Model {
 		return c.get(argmax);			
 	}
 
-	public MLM_sample_params() {
+	public MLM_sample_params_varbsel_crazy() {
 		super();
 	}
 	
-	public MLM_sample_params(Map<String, Flattenable> hypers, Map<String, Flattenable> init, Double2D data) {
+	public MLM_sample_params_varbsel_crazy(Map<String, Flattenable> hypers, Map<String, Flattenable> init, Double2D data) {
 		super(hypers);
 		
 		// Set up parameters
 		this.params = new HashMap<String, RandomVar<? extends Flattenable>>();
 		
 		// Extend hyperparameters
-		this.extended_hypers = MLM_sample_params.extend_hypers(hypers, data, (Double2D) init.get("X"));	
+		this.extended_hypers = MLM_sample_params_varbsel_crazy.extend_hypers(hypers, data, (Double2D) init.get("X"));	
 		
 		// Omega
 		this.params.put("Omega", new RandomVar<Double2D>("Omega", new PostOmegaDist(), (Double2D) init.get("Omega")));
@@ -735,6 +915,9 @@ public class MLM_sample_params extends Model {
 		// A0
 		this.params.put("A0", new RandomVar<Double2D>("A0", new PostA0Dist(), (Double2D) init.get("A0")));
 
+		// gamma
+		this.params.put("gamma", new RandomVar<Integer1D>("gamma", new PostGammaDist(), (Integer1D) init.get("gamma")));
+
 		// alpha
 		this.params.put("alpha", new RandomVar<Double0D>("alpha", new PostAlphaDist(), (Double0D) init.get("alpha")));
 	}
@@ -747,6 +930,7 @@ public class MLM_sample_params extends Model {
 		cl.add(this.params.get("Sigma"));
 		cl.add(this.params.get("Omega"));
 		cl.add(this.params.get("A0"));
+		cl.add(this.params.get("gamma"));
 		cl.add(this.params.get("alpha"));
 		return cl;
 	}

@@ -35,7 +35,7 @@ public class MLM_noparams extends Model {
 	private static double lΓ(double x, int p) {
 		double r = 0.25*p*(p-1)*Math.log(Math.PI);
 		for (int i=0; i<p; i++) {
-			r += Gamma.logGamma(x+i/2);
+			r += Gamma.logGamma(x-i/2.0);
 		}
 		return r;
 	}
@@ -58,8 +58,8 @@ public class MLM_noparams extends Model {
 		Double2D A0 = (Double2D) hypers.get("A0");
 		Double2D ΩⁿA0 = Ωⁿ.mult(A0);
 		Double2D Ψ_A0ʹΩⁿA0 = Ψ.plus(A0.transposeMult(ΩⁿA0));
-		double lΓκ = lΓ(κ, p);
-		double lΓκ_1 = lΓ(κ_1, p);
+		double lΓκ = lΓ(κ/2, p);
+		double lΓκ_1 = lΓ(κ_1/2, p);
 		double ldet_Ψ = 0.5*κ*Math.log(Ψ.det());
 		double ldet_Ωⁿ = 0.5*p*Math.log(Ωⁿ.det());	
 			

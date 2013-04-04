@@ -8,6 +8,7 @@ import org.jqgibbs.Flattenable;
 import cern.colt.matrix.DoubleMatrix1D;
 import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix1D;
+import cern.jet.math.Functions;
 
 public class Double1D implements Flattenable,Cloneable {
 
@@ -189,5 +190,13 @@ public class Double1D implements Flattenable,Cloneable {
 			v[i] = Math.sqrt(v[i]);
 		}
 		return new Double1D(v);
+	}
+
+	public void plusEquals(Double1D o) {
+		this.dm.assign(o.dm, Functions.plus);
+	}
+
+	public Double1D copy() {
+		return new Double1D(this.dm.copy());
 	}
 }

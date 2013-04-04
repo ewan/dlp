@@ -10,6 +10,7 @@ import cern.colt.matrix.impl.DenseDoubleMatrix2D;
 import cern.colt.matrix.impl.SparseDoubleMatrix2D;
 import cern.colt.matrix.linalg.CholeskyDecomposition;
 import cern.colt.matrix.linalg.SingularValueDecomposition;
+import cern.jet.math.Functions;
 
 public class Double2D implements Flattenable,Cloneable {
 	public static final double MAX_MATRIX_COND_NUM = 1e16;
@@ -21,7 +22,14 @@ public class Double2D implements Flattenable,Cloneable {
 	}
 
 	public Double2D(DoubleMatrix2D dm) {
-		this.dm = dm;
+		if (dm instanceof DenseDoubleMatrix2D) { // FIXME - this colt class (minimally) has its own
+			this.dm = dm.viewSelection(null,null);    // multiplication procedure that's incompatible w
+												 // the other matrix being a selection view. seems dumb..
+												 // what we're doing here is basically casting to a selection
+												 // view so that we never use that
+		} else {
+			this.dm = dm;
+		} 
 	}
 
 	public Double2D(int m, int n, List<int[]> indices,
@@ -47,7 +55,7 @@ public class Double2D implements Flattenable,Cloneable {
 
 	public Double2D(int m, int n) {
 		double[][] dm = new double[m][n];
-		this.dm = (new DenseDoubleMatrix2D(dm));
+		this.dm = (new DenseDoubleMatrix2D(dm)).viewSelection(null,null); // FIXME - see above
 	}
 	
 	public int length1D() {
@@ -82,7 +90,7 @@ public class Double2D implements Flattenable,Cloneable {
 	
 	@Override
 	public Object clone() {
-		return new Double2D(this.value());
+		return this.copy();
 	}
 	
 	public DoubleMatrix2D getDm() {
@@ -109,18 +117,24 @@ public class Double2D implements Flattenable,Cloneable {
 		return this.dm.toArray();
 	}
 
+//	public Double2D getAll(int... dis) {
+//		double[][] d = this.value();
+//		double[][] all = new double[dis.length][this.numCols()];
+//		int ai = 0;
+//		for (int di : dis) {
+//			for (int j = 0; j < this.numCols(); j++) {
+//				all[ai][j] = d[di][j];
+//			}
+//			ai++;
+//		}
+//		DoubleMatrix2D dm = new DenseDoubleMatrix2D(dis.length, this.numCols());
+//		dm.assign(all);
+//		return new Double2D(dm);
+//	}
+
+	// FIXME - check pour la seguridade
 	public Double2D getAll(int... dis) {
-		double[][] d = this.value();
-		double[][] all = new double[dis.length][this.numCols()];
-		int ai = 0;
-		for (int di : dis) {
-			for (int j = 0; j < this.numCols(); j++) {
-				all[ai][j] = d[di][j];
-			}
-			ai++;
-		}
-		DoubleMatrix2D dm = new DenseDoubleMatrix2D(dis.length, this.numCols());
-		dm.assign(all);
+		DoubleMatrix2D dm = this.dm.viewSelection(dis, null);
 		return new Double2D(dm);
 	}
 	
@@ -217,8 +231,9 @@ public class Double2D implements Flattenable,Cloneable {
 	}
 
 	public Double2D mult(Double2D other) {
-		return new Double2D(AlgebraStatic.multStatic(this.dm, other
-				.dm));
+		return new Double2D(this.dm.zMult(other.dm, null));
+//		return new Double2D(AlgebraStatic.multStatic(this.dm, other
+//				.dm));
 	}
 
 	public Double1D mult(Double1D other) {
@@ -235,7 +250,9 @@ public class Double2D implements Flattenable,Cloneable {
 	}
 
 	public Double2D plus(Double2D o) {
-		return new Double2D(AlgebraStatic.plusStatic(this.dm, o.dm));
+		DoubleMatrix2D dm_copy = this.dm.copy().viewSelection(null,null);
+		return new Double2D(dm_copy.assign(o.dm, Functions.plus));
+//		return new Double2D(AlgebraStatic.plusStatic(this.dm, o.dm));
 	}
 
 	public Double2D minus(Double1D v) {
@@ -243,7 +260,9 @@ public class Double2D implements Flattenable,Cloneable {
 	}
 
 	public Double2D minus(Double2D o) {
-		return new Double2D(AlgebraStatic.minusStatic(this.dm, o.dm));
+		DoubleMatrix2D dm_copy = this.dm.copy().viewSelection(null,null);
+		return new Double2D(dm_copy.assign(o.dm, Functions.minus));
+//		return new Double2D(AlgebraStatic.minusStatic(this.dm, o.dm));
 	}
 
 	public Double1D sum() {
@@ -348,5 +367,75 @@ public class Double2D implements Flattenable,Cloneable {
 		}
 		return new Double2D(sd);
 	}
+
+	public Double2D transposeMult(Double2D other) {
+		return new Double2D(this.dm.zMult(other.dm, null, 1, 1, true, false));
+	}
+
+	public void plusEquals(Double2D o) {
+		this.dm.assign(o.dm, Functions.plus);
+	}
+
+	public Double2D copy() {
+		return new Double2D(this.dm.copy());
+	}
+
+	public Double1D transposeMult(Double1D other) {
+		return new Double1D(this.dm.zMult(other.getDm(), null, 1, 1, true));
+	}
+
+	public Double2D multTranspose(Double2D other) {
+		return new Double2D(this.dm.zMult(other.dm, null, 1, 1, false, true));
+	}
+
+	public Double2D subMatrix(int[] row_indices, int[] col_indices) {
+		return new Double2D(this.dm.viewSelection(row_indices, col_indices));
+	}
+
+	public Double2D sparsifyRows(int[] row_indices) {
+		int p = this.dm.rows();
+		DoubleMatrix2D reduction_matrix = new SparseDoubleMatrix2D(p,p).viewSelection(null, null);
+		for (int i=0;i<row_indices.length;i++) {
+			reduction_matrix.setQuick(row_indices[i], row_indices[i], 1);
+		}
+		return new Double2D(reduction_matrix.zMult(this.dm, null));
+	}
+
+	public Double2D blockBDInv(int[] indices_lower, int[] indices_upper) {
+		DoubleMatrix2D B = this.dm.viewSelection(indices_upper, indices_lower); 
+		DoubleMatrix2D D = this.dm.viewSelection(indices_lower, indices_lower); 
+		return new Double2D(B.zMult(AlgebraStatic.inverseStatic(D),null));
+	}
+	
+	public Double2D schur(int[] indices_lower, int[] indices_upper) {
+		DoubleMatrix2D A = this.dm.viewSelection(indices_upper, indices_upper).copy(); 
+		DoubleMatrix2D B = this.dm.viewSelection(indices_upper, indices_lower); 
+		DoubleMatrix2D C = this.dm.viewSelection(indices_lower, indices_upper); 
+		DoubleMatrix2D D = this.dm.viewSelection(indices_lower, indices_lower); 
+		DoubleMatrix2D BDI = B.zMult(AlgebraStatic.inverseStatic(D),null).viewSelection(null,null);
+		A.assign(BDI.zMult(C, null),Functions.minus);
+		return new Double2D(A);
+	}
+
+	public Double2D interleaveRows(Double2D o, int[] this_indices, int[] other_indices) {
+		int bigRows = this.numRows()+o.numRows();
+		int bigCols = this.numCols();
+		DenseDoubleMatrix2D big = new DenseDoubleMatrix2D(bigRows,bigCols);
+		int i_this = 0;
+		for (int i : this_indices) {
+			for (int j=0; j<bigCols; j++) {
+				big.setQuick(i, j, this.dm.getQuick(i_this, j));
+			}
+			i_this++;
+		}
+		int i_o = 0;
+		for (int i : other_indices) {
+			for (int j=0; j<bigCols; j++) {
+				big.setQuick(i, j, o.dm.getQuick(i_o, j));
+			}
+			i_o++;
+		}
+		return new Double2D(big);
+	}	
 
 }

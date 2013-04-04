@@ -50,7 +50,7 @@ public class Integer1D implements Flattenable,Cloneable {
 		if (!(o instanceof Integer1D)) {
 			return false;
 		}		
-		return this.value() == ((Integer1D) o).value();
+		return Arrays.equals(this.value(),((Integer1D) o).value());
 	}
 	
 	@Override
@@ -75,7 +75,7 @@ public class Integer1D implements Flattenable,Cloneable {
 	
 	@Override
 	public Object clone() {
-		return new Integer1D(this.value());
+		return new Integer1D(this.value().clone());
 	}
 	
 	private synchronized void setInts(int[] ints) {
@@ -140,7 +140,7 @@ public class Integer1D implements Flattenable,Cloneable {
 			for (int k : active) {
 				int[] w = new int[this.size()];
 				int wi = 0;
-				for (int i=0; i<this.size(); i++) {
+				for (int i=0; i<this.size(); i++) { // Could swap in some other search
 					if (this.value()[i] == k) {
 						w[wi] = i;
 						wi++;

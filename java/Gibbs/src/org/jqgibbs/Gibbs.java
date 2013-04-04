@@ -11,7 +11,7 @@ import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.Integer2D;
-import org.jqgibbs.models.FLGFDModel;
+import org.jqgibbs.models.MLM_sample_params;
 import org.jqgibbs.models.FLGFEModel;
 import org.jqgibbs.models.FLGFVModel;
 import org.jqgibbs.models.FLGFWModel;
@@ -119,7 +119,7 @@ public class Gibbs {
 			gamma[i] = 1;
 		}
 		// run gibbs sampler
-		Sampler s = SamplerFactory.getSampler(d, new FLGFDModel(hypers, init, d.numCols()));
+		Sampler s = SamplerFactory.getSampler(d, new MLM_sample_params(hypers, init, d.numCols()));
 		for (int i=0; i<burnIn; i++) {
 			if (i % 25 == 0) {
 				System.err.println("Burnin iteration " + String.valueOf(i+1));
@@ -140,7 +140,7 @@ public class Gibbs {
 		// finish up
 		ChainWriter cw = new ChainWriter(Gibbs.outFileName, s.getModel());
 		cw.write(c);
-		ChainLink pte = FLGFDModel.pointEstimate(c, d);
+		ChainLink pte = MLM_sample_params.pointEstimate(c, d);
 		c = new Chain();
 		c.addLink(pte);
 	}

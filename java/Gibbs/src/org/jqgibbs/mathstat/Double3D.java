@@ -159,4 +159,8 @@ public class Double3D implements Flattenable,Cloneable {
 		return t;
 	}
 
+	public DoubleMatrix3D getDm() {
+		return this.dm;
+	}
+
 }
