@@ -27,7 +27,7 @@ import cern.colt.matrix.impl.DenseDoubleMatrix2D;
 import cern.colt.matrix.impl.DenseDoubleMatrix3D;
 import cern.jet.stat.Gamma;
 
-public class MLM_sample_params_varbsel_block extends Model {
+public class MLM_sample_params_varbsel_block_cache extends Model {
 
 	private static double lΓ(double x, int p) {
 		double r = 0.25*p*(p-1)*Math.log(Math.PI);
@@ -83,6 +83,45 @@ public class MLM_sample_params_varbsel_block extends Model {
 		int N = Y.numRows();
 		extended_hypers.put("N", N);
 		
+
+		
+		Map<Integer1D,Double2D> X_γs = new HashMap<Integer1D,Double2D>();
+		Map<Integer1D,Double2D[]> xxʹ_γs = new HashMap<Integer1D,Double2D[]>();
+		Map<Integer1D,Double2D[]> xyʹ_γs = new HashMap<Integer1D,Double2D[]>();
+		
+		int num_γs = (int) Math.pow(2, h-1);
+		Integer1D[] γs = new Integer1D[num_γs];
+		for (int γ_sum=0; γ_sum<num_γs; γ_sum++) {
+			int[] bits = new int[h];
+			bits[0] = 1;
+			if (γ_sum>0) {
+				int max_pos = (int) Math.floor(Math.log(γ_sum)/Math.log(2));
+				for (int i=0; i<max_pos+1; i++) {
+					bits[(h-1)-i] = ((γ_sum & (1 << i)) != 0) ? 1 : 0;
+				}
+			}
+			γs[γ_sum] = new Integer1D(bits);
+		}
+		
+		for (Integer1D γ : γs) {
+			int[] γ_indices = γ.which(1).value();
+			Double2D X_γ = X.subMatrix(null, γ_indices);
+			X_γs.put(γ, X_γ);
+			Double2D[] xxʹ_γ = new Double2D[N];
+			Double2D[] xyʹ_γ = new Double2D[N];
+			for (int i=0; i<N; i++) {
+				Double1D x_γ = X_γ.get(i);
+				Double1D y = Y.get(i);
+				xxʹ_γ[i] = x_γ.outer(x_γ);
+				xyʹ_γ[i] = x_γ.outer(y);
+			}
+			xxʹ_γs.put(γ, xxʹ_γ);
+			xyʹ_γs.put(γ, xyʹ_γ);
+		}
+		extended_hypers.put("X_γs", X_γs);
+		extended_hypers.put("xxʹ_γs", xxʹ_γs);
+		extended_hypers.put("xyʹ_γs", xyʹ_γs);
+		
 		Double2D[] yyʹ = new Double2D[N];
 		for (int i=0; i<N; i++) {
 			Double1D y = Y.get(i);
@@ -98,10 +137,10 @@ public class MLM_sample_params_varbsel_block extends Model {
 	
 	class PostOmegaDist extends ProbDistMC<Double2D> {
 		// Fixed parameters
-		Double2D Φ = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Φ");
-		Double0D λ = (Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("λ");
-		int p = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("p");
-		int N = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("N");
+		Double2D Φ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Φ");
+		Double0D λ = (Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("λ");
+		int p = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("p");
+		int N = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("N");
 
 		// Chain parameters
 		Integer1D γ;
@@ -144,11 +183,11 @@ public class MLM_sample_params_varbsel_block extends Model {
 
 	class PostSigmaDist extends ProbDistMC<Double3D> {
 		// Fixed parameters
-		private Double0D κ = (Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("κ");
-		private int p = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("p");
-		private Double2D Ψ = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Ψ");
-		private Double2D Y = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Y");
-		private Double2D X = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("X");
+		private Double0D κ = (Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("κ");
+		private int p = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("p");
+		private Double2D Ψ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Ψ");
+		private Double2D Y = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Y");
+		private Double2D X = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("X");
 
 		// Chain parameters
 		private Double2D X_γ;
@@ -217,10 +256,10 @@ public class MLM_sample_params_varbsel_block extends Model {
 
 	class PostADist extends ProbDistMC<Double3D> {
 		// Fixed parameters
-		private int p = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("p");
-		private int h = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("h");
-		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Y"));
-		private Double2D X = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("X"));
+		private int p = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("p");
+		private int h = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("h");
+		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Y"));
+		private Double2D X = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("X"));
 
 		// Chain parameters
 		private Double2D X_γ;
@@ -287,29 +326,32 @@ public class MLM_sample_params_varbsel_block extends Model {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	class CRPDist extends ProbDistMC<Integer1D> {
 		// Fixed parameters
-		private double λ = ((Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("λ")).value();
-		private Double0D κ_1 = ((Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("κ_1"));
-		private Double2D Ψ = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Ψ"));
-		private Double2D Φ = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Φ"));
-		private Double2D W = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("W"));
-		Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Sⁿ");
+		private double λ = ((Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("λ")).value();
+		private Double0D κ_1 = ((Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("κ_1"));
+		private Double2D Ψ = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Ψ"));
+		private Double2D Φ = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Φ"));
+		private Double2D W = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("W"));
+		Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Sⁿ");
 		
-		double ldet_Sⁿ = (Double) MLM_sample_params_varbsel_block.this.extended_hypers.get("ldet_Sⁿ");
-		double lτ = (Double) (MLM_sample_params_varbsel_block.this.extended_hypers.get("lτ"));
-		double lτʹ = (Double) (MLM_sample_params_varbsel_block.this.extended_hypers.get("lτʹ"));
-		double ldet_Ψ = (Double) (MLM_sample_params_varbsel_block.this.extended_hypers.get("ldet_Ψ"));
-		private double lπ = (Double) MLM_sample_params_varbsel_block.this.extended_hypers.get("lπ");
-		private double l2π = (Double) MLM_sample_params_varbsel_block.this.extended_hypers.get("l2π");
-		private int N = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("N");
-		private int p = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("p");
-		private int h = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("h");
-		private Double2D X = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("X"));
-		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Y"));
-		private Double2D[] yyʹ = (Double2D[]) MLM_sample_params_varbsel_block.this.extended_hypers.get("yyʹ");
-		private double lΓκ = (Double) MLM_sample_params_varbsel_block.this.extended_hypers.get("lΓκ");
-		private double lΓκ_1 = (Double) MLM_sample_params_varbsel_block.this.extended_hypers.get("lΓκ_1");
+		double ldet_Sⁿ = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("ldet_Sⁿ");
+		double lτ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτ"));
+		double lτʹ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτʹ"));
+		double ldet_Ψ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("ldet_Ψ"));
+		private double lπ = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lπ");
+		private double l2π = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("l2π");
+		private int N = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("N");
+		private int p = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("p");
+		private int h = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("h");
+		private Double2D X = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("X"));
+		private Double2D Y = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Y"));
+		private Double2D[] yyʹ = (Double2D[]) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("yyʹ");
+		private double lΓκ = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lΓκ");
+		private double lΓκ_1 = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lΓκ_1");
+		Map<Integer1D,Double2D[]> xxʹ_γs = (Map<Integer1D,Double2D[]>) extended_hypers.get("xxʹ_γs"); // FIXME
+		Map<Integer1D,Double2D[]> xyʹ_γs = (Map<Integer1D,Double2D[]>) extended_hypers.get("xyʹ_γs"); // FIXME
 		
 		// Chain parameters
 		private Double2D A0;
@@ -373,7 +415,8 @@ public class MLM_sample_params_varbsel_block extends Model {
 					Double2D Ψ_A0ʹΩⁿA0_γ = Ψ.plus(A0_γ.transposeMult(ΩⁿA0_γ)); 
 					Double2D Φ_γ = Φ.subMatrix(γ_indices,γ_indices);
 					Double2D A0_W_γ = A0_W.subMatrix(γ_indices,null);
-					Double2D X_γ = X.subMatrix(null,γ_indices);
+					Double2D[] xxʹ_γ = xxʹ_γs.get(γ);
+					Double2D[] xyʹ_γ = xyʹ_γs.get(γ);
 					MatrixNormalDist mnDist = new MatrixNormalDist();
 					
 					int h_γ = γ_indices.length;
@@ -388,8 +431,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 						z_γ[γ_val].set(i,-1);
 						
 						Double1D xᵢ = X.get(i);
-						Double1D xᵢ_γ = X_γ.get(i);
-						Double1D yᵢ = Y.get(i);
 						int Nᵣᵢ = z_γ[γ_val].which(zi_old_value).size();
 					
 						double[] logP_z = new double[R.size() + 1];	
@@ -424,11 +465,8 @@ public class MLM_sample_params_varbsel_block extends Model {
 						}	
 						
 						// New category
-						Double2D xxʹ_γ = xᵢ_γ.outer(xᵢ_γ);
-						Double2D xyʹ_γ = xᵢ_γ.outer(yᵢ);
-						
-						Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ).inverse();
-						Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ);
+						Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
+						Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
 						Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ = Ωᵤ_γ.mult(ΩⁿA0_xᵢyᵢʹ_γ);
 						Double2D Ψᵤ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ_γ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ));
 						double ldet_Ωᵤ_γ = 0.5*p*Math.log(Ωᵤ_γ.det());
@@ -482,10 +520,10 @@ public class MLM_sample_params_varbsel_block extends Model {
 
 	class PostA0Dist extends ProbDistMC<Double2D> {
 		// Fixed parameters
-		private Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Sⁿ");
-		private Double2D W = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("W");
-		private int h = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("h");
-		private int p = (Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("p");
+		private Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Sⁿ");
+		private Double2D W = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("W");
+		private int h = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("h");
+		private int p = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("p");
 		private MVNormalDist mvnDist;
 
 		// Chain parameters
@@ -546,9 +584,9 @@ public class MLM_sample_params_varbsel_block extends Model {
 		private CategoricalDist catDist = new CategoricalDist();
 
 		// Fixed parameters
-		private Double0D alpha_a = (Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("alpha_a");
-		private Double0D alpha_b = (Double0D) MLM_sample_params_varbsel_block.this.extended_hypers.get("alpha_b");
-		private Double0D N = new Double0D((Integer) MLM_sample_params_varbsel_block.this.extended_hypers.get("N")); 
+		private Double0D alpha_a = (Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("alpha_a");
+		private Double0D alpha_b = (Double0D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("alpha_b");
+		private Double0D N = new Double0D((Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("N")); 
 
 		// Chain parameters
 		private Double0D α;
@@ -612,9 +650,11 @@ public class MLM_sample_params_varbsel_block extends Model {
 		double lτʹ = (Double) extended_hypers.get("lτʹ");
 		double ldet_Sⁿ = (Double) extended_hypers.get("ldet_Sⁿ");
 		
-		Double2D X = (Double2D) extended_hypers.get("X");
 		Double2D Y = (Double2D) extended_hypers.get("Y");
 		Double2D[] yyʹ = (Double2D[]) extended_hypers.get("yyʹ");
+		Map<Integer1D,Double2D> X_γs = (Map<Integer1D,Double2D>) extended_hypers.get("X_γs");
+		Map<Integer1D,Double2D[]> xxʹ_γs = (Map<Integer1D,Double2D[]>) extended_hypers.get("xxʹ_γs"); // FIXME
+		Map<Integer1D,Double2D[]> xyʹ_γs = (Map<Integer1D,Double2D[]>) extended_hypers.get("xyʹ_γs"); // FIXME
 		
 		for (int m = 0; m < c.size(); m++) {
 			double posterior = 0;
@@ -662,11 +702,12 @@ public class MLM_sample_params_varbsel_block extends Model {
 			Double2D ΩⁿA0_γ = Ωⁿ_γ.mult(A0_γ);
 			Double2D Ψ_A0ʹΩⁿA0_γ = Ψ.mult(A0_γ.transposeMult(ΩⁿA0_γ));
 			
-			Double2D X_γ = X.subMatrix(null,γ_indices);
+			Double2D X_γ = X_γs.get(γ); 
+			Double2D[] xxʹ_γ = xxʹ_γs.get(γ);
+			Double2D[] xyʹ_γ = xyʹ_γs.get(γ);
 			for (int i = 0; i < N; i++) {
 				int rᵢ = z[i];
 				Double1D xᵢ_γ = X_γ.get(i);
-				Double1D yᵢ = Y.get(i);
 				Double2D Σᵢ = Σ.get(rᵢ);
 				Double2D Aᵢ = A.get(rᵢ);
 				Double2D Aᵢ_γ = Aᵢ.subMatrix(γ_indices, null);
@@ -698,10 +739,8 @@ public class MLM_sample_params_varbsel_block extends Model {
 						nc += Math.exp(ll);
 					}
 					// Compute the 'new category' term
-					Double2D xxʹ_γ = xᵢ_γ.outer(xᵢ_γ);
-					Double2D xyʹ_γ = xᵢ_γ.outer(yᵢ);
-					Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ).inverse();
-					Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ);
+					Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
+					Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
 					Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ = Ωᵤ_γ.mult(ΩⁿA0_xᵢyᵢʹ_γ);
 					Double2D Ψᵤ_γ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ_γ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ));
 					double ldet_Ωᵤ_γ = 0.5*p*Math.log(Ωᵤ_γ.det());
@@ -746,18 +785,18 @@ public class MLM_sample_params_varbsel_block extends Model {
 		return c.get(argmax);			
 	}
 
-	public MLM_sample_params_varbsel_block() {
+	public MLM_sample_params_varbsel_block_cache() {
 		super();
 	}
 	
-	public MLM_sample_params_varbsel_block(Map<String, Flattenable> hypers, Map<String, Flattenable> init, Double2D data) {
+	public MLM_sample_params_varbsel_block_cache(Map<String, Flattenable> hypers, Map<String, Flattenable> init, Double2D data) {
 		super(hypers);
 		
 		// Set up parameters
 		this.params = new HashMap<String, RandomVar<? extends Flattenable>>();
 		
 		// Extend hyperparameters
-		this.extended_hypers = MLM_sample_params_varbsel_block.extend_hypers(hypers, data, (Double2D) init.get("X"));	
+		this.extended_hypers = MLM_sample_params_varbsel_block_cache.extend_hypers(hypers, data, (Double2D) init.get("X"));	
 		
 		// Omega
 		this.params.put("Omega", new RandomVar<Double2D>("Omega", new PostOmegaDist(), (Double2D) init.get("Omega")));

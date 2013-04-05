@@ -136,11 +136,17 @@ dpmlmvb <- function(response.vars, predictor.vars=NULL, class.var=NULL, data,
                       alpha_b=ALPHA_AB(data, response.vars, predictor.vars),
                       tau=TAU(data, response.vars, predictor.vars),
                       init=INIT_DPMLMVB(data, response.vars, predictor.vars),
-                      nsamp=500, nburnin=1200, lag=7, keep_chain=F) {
+                      nsamp=500, nburnin=1200, lag=7, keep_chain=F, faster=T) {
   x <- dataset.temp(response.vars, predictor.vars, class.var, data)
   obscol <- match(predictor.vars, names(data))
   hypers <- list(W=W,S=S,Psi=Psi,kappa=kappa,Phi=Phi,lambda=lambda,
                  alpha_a=alpha_a,alpha_b=alpha_b,tau=tau)
+  if (faster == T) {
+    model_class <- "org/jqgibbs/models/MLM_sample_params_varbsel_block_cached"
+  } else {
+    model_class <- "org/jqgibbs/models/MLM_sample_params_varbsel_block"
+  }
+
   m <- jqgibbs(x, mlmvp, "org/jqgibbs/models/MLM_sample_params_varbsel_block", NULL,
                        "org/jqgibbs/GenericSampler", hypers,
                        init, nsamp, nburnin, lag, NULL, F)
