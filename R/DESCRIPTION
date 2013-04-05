@@ -1,0 +1,12 @@
+Package: dlp
+Type: Package
+Title: Data and experiments from Dillon, Dunbar and Idsardi (2013)
+Version: 0.02
+Date: 2013-04-04
+Author: Ewan Dunbar, Josh Falk
+Maintainer: Ewan Dunbar <emd@umd.edu>
+Description: None
+License: Unspecified
+LazyLoad: yes
+Collate: clustering.R models.R qgibbs.R dlp_experiments.R dlp.R regression.R
+Depends: rJava,mvtnorm,ellipse,clue,R.utils,R.oo,mclust,e1071

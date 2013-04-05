@@ -55,9 +55,14 @@ public class MLM_sample_params extends Model {
 		extended_hypers.put("h", h);
 		
 		Double2D Sⁿ = ((Double2D) hypers.get("S")).inverse();
-		Double1D vecW = ((Double2D) hypers.get("W")).colVec();
+		Double2D W = (Double2D) hypers.get("W");
+		double ldet_Sⁿ = Math.log(Sⁿ.det());
+		Double1D vecW = W.colVec();
 		Double2D Sⁿ_kr_Ih = Sⁿ.kron(Double2D.ident(h));
 		Double1D Sⁿ_kr_Ih_vW = Sⁿ_kr_Ih.mult(vecW);
+		extended_hypers.put("W", W);
+		extended_hypers.put("Sⁿ", Sⁿ);
+		extended_hypers.put("ldet_Sⁿ", ldet_Sⁿ);
 		extended_hypers.put("Sⁿ_kr_Ih", Sⁿ_kr_Ih);
 		extended_hypers.put("Sⁿ_kr_Ih_vW", Sⁿ_kr_Ih_vW);
 		
@@ -80,13 +85,20 @@ public class MLM_sample_params extends Model {
 		Double2D[] xxʹ = new Double2D[N];
 		Double2D[] yyʹ = new Double2D[N];
 		Double2D[] xyʹ = new Double2D[N];
-
+		for (int i=0; i<N; i++) {
+			Double1D xᵢ = X.get(i);
+			Double1D yᵢ = Y.get(i);
+			
+			xxʹ[i] = xᵢ.outer(xᵢ);
+			xyʹ[i] = xᵢ.outer(yᵢ);
+			yyʹ[i] = yᵢ.outer(yᵢ);
+		}
 		extended_hypers.put("xxʹ", xxʹ);
 		extended_hypers.put("xyʹ", xyʹ);
 		extended_hypers.put("yyʹ", yyʹ);
 		
-		extended_hypers.put("alpha_a", (Double0D) hypers.get("alpha_a"));
-		extended_hypers.put("alpha_b", (Double0D) hypers.get("alpha_b"));
+		extended_hypers.put("alpha_a", hypers.get("alpha_a"));
+		extended_hypers.put("alpha_b", hypers.get("alpha_b"));
 		
 		return extended_hypers;
 	}	
@@ -544,9 +556,28 @@ public class MLM_sample_params extends Model {
 		int argmax = c.size() - 1;
 		
 		GammaDist gammaDist = new GammaDist((Double0D) extended_hypers.get("alpha_a"), (Double0D) extended_hypers.get("alpha_b"));	
-		InverseWishartDist iwDist_Ω = new InverseWishartDist((Double2D) extended_hypers.get("Φ"), (Double0D) extended_hypers.get("lambda"));	
+		Double2D Φ = (Double2D) extended_hypers.get("Φ");
+		Double0D λ = (Double0D) extended_hypers.get("λ");	
+		Double2D Ψ = (Double2D) extended_hypers.get("Ψ");
+		double ldet_Ψ = (Double) extended_hypers.get("ldet_Ψ");
+		double κ = ((Double0D) extended_hypers.get("κ")).value();	
+		double κ_1 = ((Double0D) extended_hypers.get("κ_1")).value();	
+		double lΓκ = (Double) extended_hypers.get("lΓκ");
+		double lΓκ_1 = (Double) extended_hypers.get("lΓκ_1");
 		int h = (Integer) extended_hypers.get("h");
-		MatrixNormalDist mnDist = new MatrixNormalDist((Double2D) extended_hypers.get("W"), (Double2D) extended_hypers.get("S"), Double2D.ident(h));	
+		int p = (Integer) extended_hypers.get("p");
+		int N = (Integer) extended_hypers.get("N");
+		double l2π = (Double) extended_hypers.get("l2π");
+		double lπ = (Double) extended_hypers.get("lπ");
+		Double2D W = (Double2D) extended_hypers.get("W");
+		Double2D Sⁿ = (Double2D) extended_hypers.get("Sⁿ");
+		double ldet_Sⁿ = (Double) extended_hypers.get("ldet_Sⁿ");
+		
+		Double2D Y = (Double2D) extended_hypers.get("Y");
+		Double2D X = (Double2D) extended_hypers.get("X");
+		Double2D[] yyʹ = (Double2D[]) extended_hypers.get("yyʹ");
+		Double2D[] xyʹ = (Double2D[]) extended_hypers.get("xyʹ");
+		Double2D[] xxʹ = (Double2D[]) extended_hypers.get("xxʹ");
 		
 		for (int m = 0; m < c.size(); m++) {
 			double posterior = 0;
@@ -558,129 +589,82 @@ public class MLM_sample_params extends Model {
 						
 			// Omega
 			Double2D Ω = ((RandomVar<Double2D>) cl_m.get("Omega")).getNumericValue();
-			posterior += iwDist_Ω.logDensity(Ω);
+			Double2D Ωⁿ = Ω.inverse();
+			double ldet_Ω = Math.log(Ω.det());
+			double ldet_Φ = Math.log(Φ.det());
+			
+			posterior += 0.5*λ.value()*ldet_Φ - 0.5*λ.value()*h*Math.log(2) - lΓ(λ.value()/2., h) - 0.5*(λ.value()+h+1)*ldet_Ω - 0.5*Φ.mult(Ωⁿ).trace().value();
 			
 			// A0
 			Double2D A0 = ((RandomVar<Double2D>) cl_m.get("A0")).getNumericValue();
-			posterior += mnDist.logDensity(A0);
+			Double2D A0_W = A0.minus(W);
+			posterior += -h*l2π + h*ldet_Sⁿ - 0.5*Sⁿ.mult(A0_W.transposeMult(A0_W)).trace().value();
 	
 			// Model parameters and likelihood
-//			Double3D Σ = ((RandomVar<Double3D>) cl_m.get("Σ")).getNumericValue();
-//			Double3D A = ((RandomVar<Double3D>) cl_m.get("A")).getNumericValue();
-//			double lα = Math.log(α.value());
-//			int[] z = ((RandomVar<Integer1D>) cl_m.get("z")).getNumericValue().value();
+			Double3D Σ = ((RandomVar<Double3D>) cl_m.get("Sigma")).getNumericValue();
+			Double3D A = ((RandomVar<Double3D>) cl_m.get("A")).getNumericValue();
+			double lα = Math.log(α.value());
+			int[] z = ((RandomVar<Integer1D>) cl_m.get("z")).getNumericValue().value();
 //			Map<Integer,Object> cat_changed = new HashMap<Integer,Object>();
-//			for (int i = 0; i < N; i++) {
-////				if (m == 0) {
-////					log_cumul_lil[i] = new HashMap<Integer,Double>();
-////					log_cumul_lil[i] = new HashMap<Integer,Double>();
-////				}
-////				
-//				int rᵢ = z[i];
+			
+			double ldet_Ωⁿ = Math.log(Ωⁿ.det());
+			Double2D ΩⁿA0 = Ωⁿ.mult(A0);
+			Double2D Ψ_A0ʹΩⁿA0 = Ψ.mult(A0.transposeMult(ΩⁿA0));
+			
+			for (int i = 0; i < N; i++) {
+				int rᵢ = z[i];
+				Double1D xᵢ = X.get(i);
+				Double2D Σᵢ = Σ.get(rᵢ);
+				Double2D Aᵢ = A.get(rᵢ);
+				Double2D Aᵢ_A0 = Aᵢ.minus(A0);
 //				
-//				if (i > 0) {
-//					int[] zᵢ_ints = new int[i];
-//					System.arraycopy(z,0,zᵢ_ints,0,i); // FIXME - yeah, this is dumb - fix it later
-//					Integer1D zᵢ = new Integer1D(zᵢ_ints);
-//					Integer1D Rᵢ = zᵢ.items();
-//					int[] zᵣᵢ = zᵢ.which(rᵢ).value();
-//					int Nᵣᵢ = zᵣᵢ.length;
+				if (i > 0) {
+					int[] zᵢ_ints = new int[i];
+					System.arraycopy(z,0,zᵢ_ints,0,i); // FIXME - yeah, this is dumb - fix it later
+					Integer1D zᵢ = new Integer1D(zᵢ_ints);
+					Integer1D Rᵢ = zᵢ.items();
 //		
-//					if (cat_changed.containsKey(rᵢ)) {
-//						// Category has changed since last sample
-//						// The likelihood integral for this point needs
-//						// to be recomputed
-//						if (Nᵣᵢ > 0) {
-//							// Category still has points before i
-//							Double2D Xᵣᵢ = X.getAll(zᵣᵢ);
-//							Double2D Yᵣᵢ = Y.getAll(zᵣᵢ);
-//							Double2D XᵣᵢʹXᵣᵢ = Xᵣᵢ.transposeMult(Xᵣᵢ);
-//							Double2D YᵣᵢʹYᵣᵢ = Yᵣᵢ.transposeMult(Yᵣᵢ); 
-//							Double2D XᵣᵢʹYᵣᵢ = Xᵣᵢ.transposeMult(Yᵣᵢ);
-//							
-//							double κ_Nᵣᵢ = κ+Nᵣᵢ;
-//							double κ_Nᵣᵢ_1 = κ_Nᵣᵢ+1;
-//							
-//							Double2D Ωⁿ_XᵣᵢʹXᵣᵢ = Ωⁿ.plus(XᵣᵢʹXᵣᵢ);
-//							Double2D Ψ_A0ʹΩⁿA0_YᵣᵢʹYᵣᵢ = Ψ_A0ʹΩⁿA0.plus(YᵣᵢʹYᵣᵢ);
-//							Double2D ΩⁿA0_XᵣᵢʹYᵣᵢ = ΩⁿA0.plus(XᵣᵢʹYᵣᵢ);
-//							Double2D ΩⁿA0_XᵣᵢʹYᵣᵢ_xᵢyᵢʹ = ΩⁿA0_XᵣᵢʹYᵣᵢ.plus(xyʹ[i]);
-//							
-//							Double2D Ωᵥ = Ωⁿ_XᵣᵢʹXᵣᵢ.inverse();
-//							Double2D Ωᵤᵥ = Ωⁿ_XᵣᵢʹXᵣᵢ.plus(xxʹ[i]).inverse();
-//							Double2D Ψᵥ = Ψ_A0ʹΩⁿA0_YᵣᵢʹYᵣᵢ.minus(ΩⁿA0_XᵣᵢʹYᵣᵢ.transposeMult(Ωᵥ.mult(ΩⁿA0_XᵣᵢʹYᵣᵢ)));
-//							Double2D Ψᵤᵥ = Ψ_A0ʹΩⁿA0_YᵣᵢʹYᵣᵢ.plus(yyʹ[i]).minus(ΩⁿA0_XᵣᵢʹYᵣᵢ_xᵢyᵢʹ.transposeMult(Ωᵤᵥ.mult(ΩⁿA0_XᵣᵢʹYᵣᵢ_xᵢyᵢʹ)));
-//							
-//							double ldet_Ωᵥ = 0.5*p*Math.log(Ωᵥ.det());
-//							double ldet_Ωᵤᵥ = 0.5*p*Math.log(Ωᵤᵥ.det());
-//							double ldet_Ψᵥ = 0.5*κ_Nᵣᵢ*Math.log(Ψᵥ.det());
-//							double ldet_Ψᵤᵥ = 0.5*κ_Nᵣᵢ_1*Math.log(Ψᵤᵥ.det());	
-//	
-//							double lΓκ_Nᵣᵢ = lΓ((κ_Nᵣᵢ)/2, p);
-//							double lΓκ_Nᵣᵢ_1 = lΓ((κ_Nᵣᵢ_1)/2, p);
-//							
-//							double lil = Math.log(Nᵣᵢ) + lΓκ_Nᵣᵢ_1 + ldet_Ωᵤᵥ + ldet_Ψᵥ - lπ - lΓκ_Nᵣᵢ - ldet_Ωᵥ - ldet_Ψᵤᵥ;
-//							
-//							log_cumul_lil[i].put(rᵢ, lil);
-//							cumul_lil[i].put(rᵢ, Math.exp(lil));						
-//						} else {
-//							// Category now has no points before i: use the "new category" term
-//							double lil = lα + prior_lil[i];
-//							log_cumul_lil[i].put(rᵢ, lil);
-//							cumul_lil[i].put(rᵢ, Math.exp(lil));
-//						}
-//					}					
-//					// Compute normalizing constant
-//					double nc = cumul_lil[i].get(rᵢ);
-//					for (int j_r=0; j_r<Rᵢ.size(); j_r++) {
-//						int r = Rᵢ.value()[j_r];
-//						if (r != rᵢ) {
-//							if (cat_changed.containsKey(r)) {
-//								// Another category has changed: recompute posterior integrated likelihood
-//								int[] zᵣ = zᵢ.which(r).value();
-//								int Nᵣ = zᵣ.length;
-//					
-//								Double2D Xᵣ = X.getAll(zᵣ);
-//								Double2D Yᵣ = Y.getAll(zᵣ);
-//								Double2D XᵣʹXᵣ = Xᵣ.transposeMult(Xᵣ);
-//								Double2D YᵣʹYᵣ = Yᵣ.transposeMult(Yᵣ); 
-//								Double2D XᵣʹYᵣ = Xᵣ.transposeMult(Yᵣ); 
-//								
-//								double κ_Nᵣ = κ+Nᵣ;
-//								double κ_Nᵣ_1 = κ_Nᵣ+1;
-//								
-//								Double2D Ωⁿ_XᵣʹXᵣ = Ωⁿ.plus(XᵣʹXᵣ);
-//								Double2D Ψ_A0ʹΩⁿA0_YᵣʹYᵣ = Ψ_A0ʹΩⁿA0.plus(YᵣʹYᵣ);
-//								Double2D ΩⁿA0_XᵣʹYᵣ = ΩⁿA0.plus(XᵣʹYᵣ);
-//								Double2D ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ = ΩⁿA0_XᵣʹYᵣ.plus(xyʹ[i]);
-//								
-//								Double2D Ωᵥ = Ωⁿ_XᵣʹXᵣ.inverse();
-//								Double2D Ωᵤᵥ = Ωⁿ_XᵣʹXᵣ.plus(xxʹ[i]).inverse();
-//								Double2D Ψᵥ = Ψ_A0ʹΩⁿA0_YᵣʹYᵣ.minus(ΩⁿA0_XᵣʹYᵣ.transposeMult(Ωᵥ.mult(ΩⁿA0_XᵣʹYᵣ)));
-//								Double2D Ψᵤᵥ = Ψ_A0ʹΩⁿA0_YᵣʹYᵣ.plus(yyʹ[i]).minus(ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ.transposeMult(Ωᵤᵥ.mult(ΩⁿA0_XᵣʹYᵣ_xᵢyᵢʹ)));
-//								
-//								double ldet_Ωᵥ = 0.5*p*Math.log(Ωᵥ.det());
-//								double ldet_Ωᵤᵥ = 0.5*p*Math.log(Ωᵤᵥ.det());
-//								double ldet_Ψᵥ = 0.5*κ_Nᵣ*Math.log(Ψᵥ.det());
-//								double ldet_Ψᵤᵥ = 0.5*κ_Nᵣ_1*Math.log(Ψᵤᵥ.det());	
-//		
-//								double lΓκ_Nᵣ = lΓ((κ_Nᵣ)/2, p);
-//								double lΓκ_Nᵣ_1 = lΓ((κ_Nᵣ_1)/2, p);
-//								
-//								double lil = Math.log(Nᵣ) + lΓκ_Nᵣ_1 + ldet_Ωᵤᵥ + ldet_Ψᵥ - lπ - lΓκ_Nᵣ - ldet_Ωᵥ - ldet_Ψᵤᵥ;
-//								log_cumul_lil[i].put(r, lil);
-//								cumul_lil[i].put(r, Math.exp(lil));							
-//							}
-//							nc += cumul_lil[i].get(r);
-//						}
-//					}
-//					if (Nᵣᵢ > 0) {
-//						nc += Math.exp(lα + prior_lil[i]);
-//					}
-//					posterior += log_cumul_lil[i].get(rᵢ) - Math.log(nc);
-//				} else { // i == 0: probability 1
-//					posterior += 0;
-//				}
+					double ll_curr = 0;
+					double nc = 0;
+					for (int j_r=0; j_r<Rᵢ.size(); j_r++) {
+						int r = Rᵢ.value()[j_r];
+						int[] zᵣ = zᵢ.which(r).value();
+						int Nᵣ = zᵣ.length; // FIXME: sub-cache
+						
+						Double1D Aᵣʹxᵢ = Aᵢ.transposeMult(xᵢ);
+						Double1D yᵢ_Aᵣʹxᵢ = Y.get(i).minus(Aᵣʹxᵢ);
+							
+						double llik_e_term = -0.5*yᵢ_Aᵣʹxᵢ.mult(Σ.get(r).inverse().mult(yᵢ_Aᵣʹxᵢ));
+						double llik_nc_term = -l2π - 0.5*Math.log(Σ.get(r).det());
+						double ll = Math.log(Nᵣ) + llik_nc_term + llik_e_term;
+						
+						if (r == rᵢ) {
+							ll_curr = ll;
+						}
+						nc += Math.exp(ll);
+					}
+					// Compute the 'new category' term
+					Double2D Ωᵤ = Ωⁿ.plus(xxʹ[i]).inverse();
+					Double2D ΩⁿA0_xᵢyᵢʹ = ΩⁿA0.plus(xyʹ[i]);
+					Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ = Ωᵤ.mult(ΩⁿA0_xᵢyᵢʹ);
+					Double2D Ψᵤ = Ψ_A0ʹΩⁿA0.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ));
+					double ldet_Ωᵤ = 0.5*p*Math.log(Ωᵤ.det());
+					double ldet_Ψᵤ = 0.5*κ_1*Math.log(Ψᵤ.det());	
+					double prior_lil = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ + ldet_Ωᵤ - lπ - lΓκ - ldet_Ψᵤ;
+					
+					double ll = lα + prior_lil;
+					nc += Math.exp(ll);	
+					if (zᵢ.which(rᵢ).size() == 0) {
+						ll_curr = ll;
+					}
+					
+					posterior += ll_curr - Math.log(nc);
+				} else { // i == 0: probability 1
+					posterior += 0;
+				}
+				posterior += ldet_Ψ - 0.5*p*κ*Math.log(2) - lΓκ - 0.5*(κ+p+1)*Math.log(Σᵢ.det()) - 0.5*Ψ.mult(Σᵢ.inverse()).trace().value();
+				posterior += -h*l2π - 0.5*h*Math.log(Σᵢ.det()) - 0.5*(Σᵢ.inverse().mult(Aᵢ_A0.transposeMult(Ωⁿ.mult(Aᵢ_A0)))).trace().value();
+				
 //
 //				if (m == 0) {
 //					cat_changed.put(rᵢ,null);
@@ -694,14 +678,13 @@ public class MLM_sample_params extends Model {
 //						}
 //					}					
 //				}
-//			}				
+			}				
 			
 			// Set max
 			if (posterior > max) {
 				argmax = m;
 				max = posterior;
 			}
-			
 		}
 
 		return c.get(argmax);			

@@ -16,6 +16,8 @@
 ##############################################################################
 
 QG.MODEL.FNS <- list(
+  mlmvp=mlmvp,
+  mlmp=mlmp,
   flgff=flgfa,
   flgfc=flgfa,
   flgfa=flgfa,
@@ -27,7 +29,9 @@ JQG.MODEL.CLASSES <- list(
   flgff="org/jqgibbs/models/FLGFFModel",
   flgfc="org/jqgibbs/models/FLGFCModel",
   flgfa="org/jqgibbs/models/FLGFAModel",
-  mpg="org/jqgibbs/models/MpgFModel"
+  mpg="org/jqgibbs/models/MpgFModel",
+  mlmvp="org/jqgibbs/models/MLM_sample_params_varbsel_block",
+  mlmp="org/jqgibbs/models/MLM_sample_params"
 )
 
 ##############################################################################
@@ -65,9 +69,9 @@ jqgibbs <- function(data, model.fn, model.class, name, samplerClass, hypers, ini
   hyperobj <- jqgobj(hypers)
   initobj <- jqgobj(init)
   # Prepare the sampler
-  modelobj <- .jnew(model.class, hyperobj, initobj, dataobj$numCols())
+  modelobj <- .jnew(model.class, hyperobj, initobj, dataobj)
   modelobj <- .jcast(modelobj, "org/jqgibbs/Model")
-  samplerobj <- .jnew(samplerClass, modelobj, dataobj)
+  samplerobj <- .jnew(samplerClass, modelobj)
   # Run the sampler, saving about every savetime
   lastSaveTime <- proc.time()["elapsed"] 
   chobj <- .jnew("org/jqgibbs/Chain")
@@ -80,7 +84,7 @@ jqgibbs <- function(data, model.fn, model.class, name, samplerClass, hypers, ini
   lagIter <- FALSE
   pbar <- txtProgressBar(min = 0, max = totaliters, style = 3)
   while (i < nsamples) {
-    chlinkobj <- samplerobj$variateFast()
+    chlinkobj <- samplerobj$variate()
     currTime <- proc.time()["elapsed"]
     if (!(is.null(savetime))) {
       if ((i >= 1) & (currTime-lastSaveTime > savetime)) {
@@ -135,7 +139,8 @@ jqgibbs <- function(data, model.fn, model.class, name, samplerClass, hypers, ini
     rm(ch)
   }
   # Return the mixture object
-  m <- mixture(chobj, data, model.fn, model.class, hyperobj)
+  xhyperobj <- J(model.class)$extend_hypers(hyperobj, dataobj, initobj$get("X")) # FIXME
+  m <- mixture(chobj, data, model.fn, model.class, xhyperobj)
   rm(chobj)
   gc()
   return(m)
@@ -191,24 +196,29 @@ jqgobj.data.frame <- function(x) {
 jqgobj.array <- function(x) {
   .jinit()
   if (length(dim(x)) == 3) {
-    y <- array(0, dim(x)[c(2,1,3)])
+#    y <- array(0, dim(x)[c(2,1,3)])
+#    for (i in 1:dim(x)[3]) {
+#      y[,,i] <- t(x[,,i])
+#    }
+    y <- array(0, dim(x)[c(3,1,2)])
     for (i in 1:dim(x)[3]) {
-      y[,,i] <- t(x[,,i])
+      y[i,,] <- x[,,i]
     }
-    l <- as.integer(dim(x)[3])
-    m <- as.integer(dim(x)[1])
-    n <- as.integer(dim(x)[2])
-    v <- as.vector(y)
-    if (length(v) > 1) {
-      if (is.integer(v)) {
-        obj <- .jnew("org/jqgibbs/mathstat/Integer3D", l, m, n, v)
+#    l <- as.integer(dim(x)[3])
+#    m <- as.integer(dim(x)[1])
+#    n <- as.integer(dim(x)[2])
+#    v <- as.vector(y)
+#    if (length(v) > 1) {
+#      if (is.integer(v)) {
+      if (is.integer(y)) {
+        obj <- .jnew("org/jqgibbs/mathstat/Integer3D", .jarray(y,dispatch=T))
       } else {
-        obj <- .jnew("org/jqgibbs/mathstat/Double3D", l, m, n, v)
+        obj <- .jnew("org/jqgibbs/mathstat/Double3D", .jarray(y,dispatch=T))
       }
-    } else {
-      obj <- jqgobj(v) 
-      obj <- obj$sequence()$sequence()$sequence()
-    }
+#    } else {
+#      obj <- jqgobj(v) 
+#      obj <- obj$sequence()$sequence()$sequence()
+#    }
     return(obj)
   } else {
     # FIXME
@@ -218,19 +228,23 @@ jqgobj.array <- function(x) {
 
 jqgobj.matrix <- function(x) {
   .jinit()
-  m <- as.integer(nrow(x))
-  n <- as.integer(ncol(x))
-  v <- as.vector(t(x))
-  if (length(v) > 1) {
-    if (is.integer(v)) {
-      obj <- .jnew("org/jqgibbs/mathstat/Integer2D", m, n, v)
+#  m <- as.integer(nrow(x))
+#  n <- as.integer(ncol(x))
+#  v <- as.vector(t(x))
+#  if (length(v) > 1) {
+#    if (is.integer(v)) {
+    if (is.integer(x)) {
+#      obj <- .jnew("org/jqgibbs/mathstat/Integer2D", m, n, v)
+      obj <- .jnew("org/jqgibbs/mathstat/Integer2D", .jarray(x,dispatch=T))
     } else {
-      obj <- .jnew("org/jqgibbs/mathstat/Double2D", m, n, v)
+#      obj <- .jnew("org/jqgibbs/mathstat/Double2D", m, n, v)
+      # FIXME
+      obj <- .jnew("org/jqgibbs/mathstat/Double2D", .jarray(x,dispatch=T))
     }
-  } else {
-    obj <- jqgobj(v) 
-    obj <- obj$sequence()$sequence()
-  }
+#  } else {
+#    obj <- jqgobj(v) 
+#    obj <- obj$sequence()$sequence() # FIXME
+#  }
   return(obj)
 }
 
@@ -253,13 +267,14 @@ jqgobj.list <- function(x) {
   return(obj)
 }
 
-jqgobj.model.fn <- function(x, hyperobj, initobj, dataobj) {
-  .jinit()
-  model.class <- jqgclass(x)
-  obj <- .jnew(model.class, hyperobj, initobj, dataobj$numCols())
-  obj <- .jcast(obj, "org/jqgibbs/Model")
-  return(obj)
-}
+# FIXME
+#jqgobj.model.fn <- function(x, hyperobj, initobj, dataobj) {
+#  .jinit()
+#  model.class <- jqgclass(x)
+#  obj <- .jnew(model.class, hyperobj, initobj, dataobj$numCols())
+#  obj <- .jcast(obj, "org/jqgibbs/Model")
+#  return(obj)
+#}
 
 ##############################################################################
 # Get R objects from jqgobj objects
@@ -296,16 +311,16 @@ as.list.jqgobj <- function(x, ...) {
 }
 
 as.numeric.jqgobj <- function(x, ...) {
-  if (.jinstanceof(x, "org/jqgibbs/mathstat/Numeric")) {
+#  if (.jinstanceof(x, "org/jqgibbs/mathstat/Numeric")) {
     v <- x$value()
     if (class(v) == "jobjRef") {
       return(as.numeric.jqgobj(v))
     }
     return(as.numeric(v))
-  } else {
-    # Here you would remove the outer layer of structure - FIXME
-    return(as.numeric(x))
-  }
+#  } else {
+#    # Here you would remove the outer layer of structure - FIXME
+#    return(as.numeric(x))
+#  }
 }
 
 ##############################################################################
@@ -530,10 +545,10 @@ mixture.qchain <- function(ch) {
   return(m)
 }
 
-mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel, hyperobj) {
-  ch <- qchain(chobj, data, model.fn, jqgmodel)
+mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel, xhyperobj) {
+  ch <- qchain(chobj, data, model.fn, jqgmodel) # FIXME??
   if (length(.jmethods(J(jqgmodel), "pointEstimate")) > 0) {
-    ptechlobj <- J(jqgmodel)$pointEstimate(chobj, jqgobj(data$data), hyperobj)
+    ptechlobj <- J(jqgmodel)$pointEstimate(chobj, xhyperobj)
     ptechobj <- .jnew("org/jqgibbs/Chain")
     ptechobj$addLink(ptechlobj)
     ptech <- qchain(ptechobj, data, model.fn, jqgmodel)

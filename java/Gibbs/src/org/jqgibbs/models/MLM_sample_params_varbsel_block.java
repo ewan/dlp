@@ -129,8 +129,8 @@ public class MLM_sample_params_varbsel_block extends Model {
 		}
 		extended_hypers.put("yyʹ", yyʹ);
 		
-		extended_hypers.put("alpha_a", (Double0D) hypers.get("alpha_a"));
-		extended_hypers.put("alpha_b", (Double0D) hypers.get("alpha_b"));
+		extended_hypers.put("alpha_a", hypers.get("alpha_a"));
+		extended_hypers.put("alpha_b", hypers.get("alpha_b"));
 		
 		return extended_hypers;
 	}	

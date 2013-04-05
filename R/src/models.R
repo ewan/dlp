@@ -20,6 +20,7 @@ all.subsets <- function(K, max) {
 }
 
 find.index.parms <- function(data, v, order, fixedparms, fixedlengths, dataparms,
+                             fhparms, fhdims,
                              fdimparms, fdimdims, vdimparms, vdimdims,
                              datahparms, fdimhparms, vdimhparms, vhparms,
                              vhdims, h) {
@@ -40,6 +41,14 @@ find.index.parms <- function(data, v, order, fixedparms, fixedlengths, dataparms
   n <- names(lengths)
   for (parm in datahparms) {
     lengths <- c(lengths, h*N)
+    n <- c(n, parm)
+  }
+  names(lengths) <- n
+
+  # Add fixed-length h*h parms to lengths
+  n <- names(lengths)
+  for (parm in fhparms) {
+    lengths <- c(lengths, h*h)
     n <- c(n, parm)
   }
   names(lengths) <- n
@@ -144,6 +153,10 @@ pg <- function(...) {
 
 flgfm <- function(...) {
   UseMethod("flgfm")
+}
+
+lmod <- function(...) {
+  UseMethod("lmod")
 }
 
 mog <- function(...) {
@@ -443,7 +456,7 @@ parm.index.finder.flgfa <- function(model, data, v, order, h) {
   vdimhparms <- c("A")
   lengths <- c(1, 1)
   names(lengths) <- c("al", "x")
-  return(find.index.parms(data, v, order, names(lengths), lengths, dataparms,
+  return(find.index.parms(data, v, order, names(lengths), lengths, dataparms, c(),
                           fdimparms, fdimdims, vdimparms, vdimdims, datahparms,
                           fdimhparms, vdimhparms, vhparms, vhdims, h))
 }
@@ -460,6 +473,113 @@ bdev.flgfa <- function(m, data=NULL) {
   }
   loglik <- sum(apply(mds, 1, max))
   return(-2*loglik)
+}
+
+mlmp <- function(data, parms.to.elems, v, off.by.one=T) {
+  o <- mixture()
+  if (!(missing(data))) {
+    d <- ncol(data$data)
+    o$data <- data
+    o$z <- v[parms.to.elems[["z"]]]
+    if (off.by.one) {
+      o$z <- o$z + 1
+    }
+    h <- length(parms.to.elems[["A0"]])/d
+    o$A0 <- matrix(v[parms.to.elems[["A0"]]], d, h)
+    o$Omega <- matrix(v[parms.to.elems[["Omega"]]], h, h)
+    o$A <- list()
+    o$Sigma <- list()
+    A.raw <- v[parms.to.elems[["A"]]]
+    Sigma.raw <- v[parms.to.elems[["Sigma"]]]
+    K <- length(A.raw[!is.na(A.raw)])/(d*h)
+    for (i in 1:K) {
+      offset.dh <- (i-1)*d*h
+      offset.dd <- (i-1)*(d^2)
+      o$A[[i]] <- matrix(A.raw[(offset.dh+1):(offset.dh+d*h)], d, h)
+      o$Sigma[[i]] <- matrix(Sigma.raw[(offset.dd+1):(offset.dd+(d^2))], d, d)
+    }
+    o$alpha <- v[parms.to.elems[["alpha"]]]
+    o$active <- which(1:K %in% o$z)
+  }
+  class(o) <- c("mlmp", class(o))
+  return(o)
+}
+
+parm.index.finder.mlmp <- function(model, data, v, order, h) {
+  dataparms <- c("z")
+  datahparms <- c()
+  vdimparms <- c("Sigma")
+  vdimdims <- c(2)
+  names(vdimdims) <- vdimparms
+  vhparms <- c()
+  vhdims <- c()
+  names(vhdims) <- vhparms
+  fhparms <- c("Omega")
+  fdimparms <- c()
+  fdimdims <- c()
+  names(fdimdims) <- fdimparms
+  fdimhparms <- c("A0")
+  vdimhparms <- c("A")
+  lengths <- c(1)
+  names(lengths) <- c("alpha")
+  return(find.index.parms(data, v, order, names(lengths), lengths, dataparms,
+                          fhparms,
+                          fdimparms, fdimdims, vdimparms, vdimdims, datahparms,
+                          fdimhparms, vdimhparms, vhparms, vhdims, h))
+}
+
+mlmvp <- function(data, parms.to.elems, v, off.by.one=T) {
+  o <- mixture()
+  if (!(missing(data))) {
+    d <- ncol(data$data)
+    o$data <- data
+    o$z <- v[parms.to.elems[["z"]]]
+    if (off.by.one) {
+      o$z <- o$z + 1
+    }
+    h <- length(parms.to.elems[["A0"]])/d
+    o$A0 <- matrix(v[parms.to.elems[["A0"]]], d, h)
+    o$Omega <- matrix(v[parms.to.elems[["Omega"]]], h, h)
+    o$A <- list()
+    o$Sigma <- list()
+    A.raw <- v[parms.to.elems[["A"]]]
+    Sigma.raw <- v[parms.to.elems[["Sigma"]]]
+    K <- length(A.raw[!is.na(A.raw)])/(d*h)
+    for (i in 1:K) {
+      offset.dh <- (i-1)*d*h
+      offset.dd <- (i-1)*(d^2)
+      o$A[[i]] <- matrix(A.raw[(offset.dh+1):(offset.dh+d*h)], d, h)
+      o$Sigma[[i]] <- matrix(Sigma.raw[(offset.dd+1):(offset.dd+(d^2))], d, d)
+    }
+    o$alpha <- v[parms.to.elems[["alpha"]]]
+    o$gamma <- v[parms.to.elems[["gamma"]]]
+    o$active <- which(1:K %in% o$z)
+  }
+  class(o) <- c("mlmvp", class(o))
+  return(o)
+}
+
+parm.index.finder.mlmvp <- function(model, data, v, order, h) {
+  dataparms <- c("z")
+  datahparms <- c()
+  vdimparms <- c("Sigma")
+  vdimdims <- c(2)
+  names(vdimdims) <- vdimparms
+  vhparms <- c()
+  vhdims <- c()
+  names(vhdims) <- vhparms
+  fhparms <- c("Omega")
+  fdimparms <- c()
+  fdimdims <- c()
+  names(fdimdims) <- fdimparms
+  fdimhparms <- c("A0")
+  vdimhparms <- c("A")
+  lengths <- c(1, h)
+  names(lengths) <- c("alpha", "gamma")
+  return(find.index.parms(data, v, order, names(lengths), lengths, dataparms,
+                          fhparms,
+                          fdimparms, fdimdims, vdimparms, vdimdims, datahparms,
+                          fdimhparms, vdimhparms, vhparms, vhdims, h))
 }
 
 order_heur.flgfa <- function(m) {
@@ -496,15 +616,45 @@ flgfm.flgfa <- function(m, i) {
   o$Sg <- m$Sg[[i]]
   o$Omega <- m$Omega[[i]]
   o$B <- m$B
-  o$d <- length(o$A)
+  o$d <- length(o$A) # FIXME wtf is this for
   o$h <- nrow(o$B)
-  o$obscol <- m$obscol
+  o$obscol <- m$obscol # FIXME also
   class(o) <- c("flgfm") 
   return(o)
 }
 
 component.flgfa <- function(m, i) {
   return(flgfm(m, i))
+}
+
+lmod.mlmp <- function(m, i) {
+  o <- list()
+  o$A <- m$A[[i]]
+  o$h <- ncol(o$A)
+  o$Sigma <- m$Sigma[[i]]
+  o$d <- length(o$A)
+  o$gamma <- rep(T, o$h)
+  class(o) <- c("lmod") 
+  return(o)
+}
+
+lmod.mlmvp <- function(m, i) {
+  o <- list()
+  o$gamma <- as.logical(m$gamma)
+  o$A <- m$A[[i]][,o$gamma]
+  o$h <- ncol(o$A)
+  o$Sigma <- m$Sigma[[i]]
+  o$d <- length(o$A)
+  class(o) <- c("lmod") 
+  return(o)
+}
+
+component.mlmp <- function(m, i) {
+  return(lmod(m, i))
+}
+
+component.mlmvp <- function(m, i) {
+  return(lmod(m, i))
 }
 
 density.flgfm <- function(m, X, log=T, maxc=4) {
@@ -530,6 +680,52 @@ density.flgfm <- function(m, X, log=T, maxc=4) {
   return(apply(dm, 1, max))
 }
 
+plot.lmod <- function(m, data, transform=default.transform,
+                          initplot=default.initplot,
+                          lwd=1, lev=0.75, lty.cept=1,
+                          lty.slope=2, npts1d=1000, old.school=F, ...) {
+  if (!identical(initplot, FALSE)) {
+    initplot(m)
+  }
+  if (old.school) {
+    h <- ncol(m$X) - 1
+    center.x <- c(1, rep(0, h))
+    center.pred <- predict(m, center.x)
+    additional.points <- diag(h)
+  } else {
+    center.pred <- predict(m, c(1, center.obs(data$tronly))[m$gamma])
+    additional.points <- crucial.points(data$tronly)
+  }
+  additional.preds <- predict(m, cbind(rep(1,nrow(additional.points)),
+                                       additional.points)[,m$gamma])
+  if (nrow(m$Sigma) == 1) {
+    plotlim <- par("xaxp")[1:2]
+    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
+    y <- dnorm(plotpts, center.pred, sqrt(m$Sigma))
+    lines(y ~ plotpts, lty=lty.cept, ...)
+    for (i in seq(1, length=nrow(additional.preds))) {
+      y <- dnorm(plotpts, additional.preds[i], sqrt(m$Sigma))
+      lines(y ~ plotpts, lty=lty.slope, ...)
+    }
+  } else {
+    e <- ellipse(m$Sigma, centre = center.pred, lev = lev, ...)
+    lines(transform(e[, 1:2]), lwd = lwd, lty = lty.cept, ...)
+    for (i in seq(1, length=nrow(additional.preds))) {
+      e <- ellipse(m$Sigma, centre = additional.preds[i,], lev = lev, lwd=lwd, ...)
+      lines(transform(e[, 1:2]), lwd = lwd, lty = lty.slope, ...)
+    }
+  }
+}
+
+predict.lmod <- function(m, X) {
+  if (is.matrix(X)) {
+    return(t(m$A %*% t(X)))
+  } else {
+    return(t(m$A %*% X))
+  }
+}
+
+
 plot.flgfm <- function(m, data, transform=default.transform,
                           initplot=default.initplot,
                           lwd=1, lev=0.75, lty.cept=1,
@@ -543,8 +739,8 @@ plot.flgfm <- function(m, data, transform=default.transform,
     center.pred <- predict(m, center.x)
     additional.points <- diag(h)
   } else {
-    center.pred <- predict(m, c(1, center.obs(data$tronly, m$obscol)))
-    additional.points <- crucial.points(data$tronly, m$obscol)
+    center.pred <- predict(m, c(1, center.obs(data$tronly)))
+    additional.points <- crucial.points(data$tronly)
   }
   additional.preds <- predict(m, cbind(rep(1,nrow(additional.points)),
                                        additional.points))

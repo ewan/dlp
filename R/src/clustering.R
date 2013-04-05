@@ -395,20 +395,24 @@ plot.mixture <- function(m,
   # Get color map
   colormap <- mixture_colors(m)
   # Plot points
+  if (class(m)[1] %in% c("flgfd", "flgfa")) {
+    z <- m$Z
+  } else {
+    z <- m$z
+  }
   if (ncol(m$data$data) == 1) {
-    for (i in 1:length(m$active)) {
-      k <- m$active[i]
-      d <- m$data$data[m$Z==k,1]
+    for (k in unique(z)) {
+      d <- m$data$data[z==k,1]
       if (length(d) > 1) {
-        lines(density(m$data$data[m$Z==k,1]), col=colormap[k])
+        lines(density(m$data$data[z==k,1]), col=colormap[k])
       }
     }
   } else {
-    pt_colors <- colormap[m$Z]
+    pt_colors <- colormap[z]
     points(transform(m$data$data)[,1:2], col=pt_colors, pch=pch, ...)
   }
   # Plot components
-  for (k in unique(m$Z)) {
+  for (k in unique(z)) {
     if (identical(comp_colors,"mix")) {
       plot(component(m, k), m$data, col=colormap[k], transform=transform,
                             initplot=F, ...)

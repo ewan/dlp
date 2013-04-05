@@ -53,6 +53,7 @@ public class RandomVar<T extends Flattenable> {
 		return posterior;
 	}
 
+	@Override
 	public String toString() {
 		return this.numericValue.toString();
 	}

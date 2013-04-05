@@ -62,7 +62,7 @@ public class WishartDist extends ProbDist<Double2D> {
 			throw new IllegalArgumentException("Expected square matrix for Psi");
 		}
 		// Positive definiteness will be tested when we try to sample
-		if (this.k.value() <= ((double) this.p - 1.0)) {
+		if (this.k.value() <= (this.p - 1.0)) {
 			String error = "K: Must be >= number of dimensions - 1 ("
 					+ String.valueOf(WishartDist.this.p - 1) + ")";
 			throw new IllegalArgumentException(error);
@@ -100,6 +100,7 @@ public class WishartDist extends ProbDist<Double2D> {
 	 * <admartin@wustl.edu>, Kevin M. Quinn <kevin_quinn@harvard.edu>, Jong Hee
 	 * Park <jhp@uchicago.edu>.
 	 */
+	@Override
 	protected Double2D genVariate() {
 		// Bartlett decomposition: step 1: Cholesky decomposition of scale
 		// matrix

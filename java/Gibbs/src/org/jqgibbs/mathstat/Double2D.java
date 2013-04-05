@@ -18,7 +18,7 @@ public class Double2D implements Flattenable,Cloneable {
 	private DoubleMatrix2D dm;
 
 	public Double2D(double[][] ds) {
-		this.dm = new DenseDoubleMatrix2D(ds);
+		this(new DenseDoubleMatrix2D(ds));
 	}
 
 	public Double2D(DoubleMatrix2D dm) {

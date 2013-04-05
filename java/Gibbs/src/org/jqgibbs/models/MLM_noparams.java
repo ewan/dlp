@@ -99,8 +99,8 @@ public class MLM_noparams extends Model {
 		extended_hypers.put("yyʹ", yyʹ);
 		extended_hypers.put("prior_lil", prior_lil);
 		
-		extended_hypers.put("alpha_a", (Double0D) hypers.get("alpha_a"));
-		extended_hypers.put("alpha_b", (Double0D) hypers.get("alpha_b"));
+		extended_hypers.put("alpha_a", hypers.get("alpha_a"));
+		extended_hypers.put("alpha_b", hypers.get("alpha_b"));
 		
 		return extended_hypers;
 	}
@@ -465,8 +465,8 @@ public class MLM_noparams extends Model {
 		
 		int[] previous_z = null;
 		
-		Map<Integer,Double>[] log_cumul_lil = (Map<Integer,Double>[]) Array.newInstance((Class<HashMap<Integer,Double>>)(Class<?>)HashMap.class, N);
-		Map<Integer,Double>[] cumul_lil = (Map<Integer,Double>[]) Array.newInstance((Class<HashMap<Integer,Double>>)(Class<?>)HashMap.class, N);
+		Map<Integer,Double>[] log_cumul_lil = (Map<Integer,Double>[]) Array.newInstance((Class<?>)HashMap.class, N);
+		Map<Integer,Double>[] cumul_lil = (Map<Integer,Double>[]) Array.newInstance((Class<?>)HashMap.class, N);
 		
 		for (int m = 0; m < c.size(); m++) {
 			double posterior = 0;

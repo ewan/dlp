@@ -28,6 +28,7 @@ public class ChainLink implements Iterable<RandomVar<?>> {
 		return this.getOrder().add(gv.getName());
 	}
 
+	@Override
 	public String toString() {
 		String s = "";
 		String prefix = "";
