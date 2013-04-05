@@ -196,15 +196,19 @@ dataset.temp <- function(response.vars, predictor.vars=NULL, class.var=NULL, dat
   } else if (length(ccol) > 0) {
     ccol <- ccol[1]
   }
-  colnames(data)[ycols] <- paste("X", 1:length(ycols), sep='')
-  if (length(xcols) > 0) {
-    colnames(data)[xcols] <- paste("T", 1:length(xcols), sep='')
+  data_new <- data[,c(ycols,xcols,ccol)]
+  ycols_new <- match(response.vars, names(data_new), nomatch=c())
+  xcols_new <- match(predictor.vars, names(data_new), nomatch=c())
+  ccol_new <- match(class.var, names(data_new), nomatch=c())
+  colnames(data_new)[ycols_new] <- paste("X", 1:length(ycols_new), sep='')
+  if (length(xcols_new) > 0) {
+    colnames(data_new)[xcols_new] <- paste("T", 1:length(xcols_new), sep='')
   }
-  if (length(ccol) == 1) {
-    colnames(data)[ccol] <- "C"
-    data[["C"]] <- factor(data[["C"]])
+  if (length(ccol_new) == 1) {
+    colnames(data_new)[ccol_new] <- "C"
+    data_new[["C"]] <- factor(data_new[["C"]])
   }
-  return(dataset(data))
+  return(dataset(data_new))
 }
 
 dataset.data.frame <- function(d) {
