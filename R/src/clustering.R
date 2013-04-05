@@ -262,7 +262,7 @@ default.colnames <- function(ds) {
 }
 
 as.data.frame.dataset <- function(ds) {
-  return(as.data.frame(c(ds$data,ds$tronly,ds$classes,ds$secclasses))) # FIXME - column names in ds must be ok
+  return(as.data.frame(c(ds$data,ds$tronly,list(C=ds$classes),ds$secclasses))) # FIXME - column names in ds must be ok
 }
 
 ########################################################################
