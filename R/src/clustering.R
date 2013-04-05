@@ -262,37 +262,7 @@ default.colnames <- function(ds) {
 }
 
 as.data.frame.dataset <- function(ds) {
-  # Get default column names
-  colnames <- default.colnames(ds)
-  # Skim identifying characters from column names
-  ids <- substr(colnames, 1, 1)
-  # Construct empty data frame
-  Ndata <- length(which(ids=="X"))
-  Ntronly <- length(which(ids=="T"))
-  Nsecs <- length(which(ids=="S"))
-  d <- dataFrame(colClasses=
-    c(rep("numeric", Ndata),
-      rep("numeric", Ntronly),
-      "numeric",
-      rep("numeric", Nsecs)),
-    nrow=nrow(ds$data)
-  )
-  names(d) <- colnames
-  # Fill in data frame
-  if (Ndata > 0) {
-    d[,1:Ndata] <- ds$data
-  }
-  if (Ntronly > 0) {
-    d[,(Ndata+1):(Ndata+Ntronly)] <- ds$tronly
-  }
-  if (!identical(NULL, ds$classes)) {
-    d[,(Ndata+Ntronly+1)] <- ds$classes
-  }
-  if (!identical(NULL, ds$secclasses)) {
-    d[,(Ndata+Ntronly+1+1):(Ndata+Ntronly+1+Nsecs)] <- ds$secclasses
-  }
-  # Return it
-  return(d)
+  return(as.data.frame(c(ds$data,ds$tronly,ds$classes,ds$secclasses))) # FIXME - column names in ds must be ok
 }
 
 ########################################################################
