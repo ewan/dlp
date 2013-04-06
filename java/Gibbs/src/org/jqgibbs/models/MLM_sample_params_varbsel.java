@@ -519,6 +519,13 @@ public class MLM_sample_params_varbsel extends Model {
 				}
 				// New category
 				logP[rj] = lα + prior_lil[i];
+				if (logP[rj] == Double.POSITIVE_INFINITY) {
+					logP[rj] = Double.MAX_VALUE;
+				}				
+				if (logP[rj] > maxLogP) {
+					maxLogP = logP[rj];
+				}			
+				
 				
 				// Select a category for this point
 				int newc_rjindex = rj; // last index

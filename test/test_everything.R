@@ -18,7 +18,7 @@ hack_load_data(PKG_DIR)
 
 m1 <- dpmlmb(c("X1","X2","X3"), c("T1","T2","T3"), "C", data=JavaTest, nburnin=0, nsamp=10)
 plot(m1)
-m2 <- dpmlmvb(c("X1","X2","X3"), c("T1","T2","T3"), "C", data=JavaTest, nburnin=0, nsamp=10)
+m2 <- dpmlmvb(c("X1","X2","X3"), c("T1","T2","T3"), "C", data=JavaTest, nburnin=0, nsamp=10, Tfz=0.9)
 plot(m2)
 m3 <- dpmlmvb(c("X1","X2","X3"), c("T1","T2","T3"), "C", data=JavaTest, nburnin=2000, nsamp=100, faster=T)
 plot(m3)

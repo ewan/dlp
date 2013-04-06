@@ -96,6 +96,35 @@ public class MLM_sample_params_varbsel_block extends Model {
 		return extended_hypers;
 	}	
 	
+	class TemperatureSchedule extends ProbDistMC<Double0D> {
+		private double lT0;
+		private double lTf;
+		private int deadline;
+		
+		private int t = 0;
+		
+		TemperatureSchedule(double T0, double Tf, int deadline) {
+			this.lT0 = Math.log(T0);
+			this.lTf = Math.log(Tf);
+			this.deadline = deadline;
+		}
+		
+		@Override
+		public void setMCState(ChainLink l) {};
+		
+		@Override
+		protected Double0D genVariate() {
+			double lT;
+			if (t < deadline) {
+				double scale = (++t)/deadline;
+				lT = (1-scale)*lT0 + scale*lTf;
+			} else {
+				lT = lTf;
+			}
+			return new Double0D(Math.exp(lT));
+		}
+	}
+	
 	class PostOmegaDist extends ProbDistMC<Double2D> {
 		// Fixed parameters
 		Double2D Φ = (Double2D) MLM_sample_params_varbsel_block.this.extended_hypers.get("Φ");
@@ -115,8 +144,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 
 		private InverseWishartDist iwDist = new InverseWishartDist();
 		
-		public PostOmegaDist() { }
-
 		@Override
 		public void setMCState(ChainLink l) {
 			this.R = ((Integer1D) l.get("z").getNumericValue()).items();
@@ -162,8 +189,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 		private int[] γ_indices;
 		
 		private InverseWishartDist iwDist = new InverseWishartDist();
-
-		public PostSigmaDist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
@@ -234,8 +259,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 		private int[] γ_indices;
 		
 		private MatrixNormalDist mnDist_γ;
-
-		public PostADist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
@@ -320,12 +343,13 @@ public class MLM_sample_params_varbsel_block extends Model {
 		private Integer1D γ; // FIXME: Blocked, modified
 		private Integer1D z;
 		private Double0D α;
+		
+		private double Tz;
+		private double Tγ;
 
 		private Double1D postProb;
 		private CategoricalDist catDist = new CategoricalDist();
 		private InverseWishartDist iwDist = new InverseWishartDist();
-
-		public CRPDist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
@@ -337,6 +361,9 @@ public class MLM_sample_params_varbsel_block extends Model {
 			this.A = (Double3D) l.get("A").getNumericValue();
 			this.z = (Integer1D) l.get("z").getNumericValue();
 			this.α = (Double0D) l.get("alpha").getNumericValue();
+			
+			this.Tz = ((Double0D) l.get("Tz").getNumericValue()).value();
+			this.Tγ = ((Double0D) l.get("Tγ").getNumericValue()).value();
 			
 			for (int i=0; i<N; i++) {
 				Double1D yᵢ = Y.get(i);
@@ -361,6 +388,7 @@ public class MLM_sample_params_varbsel_block extends Model {
 				double[] logP_γz = new double[2];
 				logP_γz[0] = lτʹ;
 				logP_γz[1] = lτ;
+				int γ_val_old = γ.value()[varb];
 				for (int γ_val = 0; γ_val<2; γ_val++) {
 					γ.set(varb,γ_val);
 					int[] γ_indices = γ.which(1).items().value();
@@ -435,18 +463,42 @@ public class MLM_sample_params_varbsel_block extends Model {
 						double ldet_Ψᵤ = 0.5*κ_1.value()*Math.log(Ψᵤ.det());
 						double prior_lil = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ_γ + ldet_Ωᵤ_γ - lπ - lΓκ - ldet_Ψᵤ;
 						logP_z[rj] = lα + prior_lil;
+						if (logP_z[rj] == Double.POSITIVE_INFINITY) {
+							logP_z[rj] = Double.MAX_VALUE;
+						}				
+						if (logP_z[rj] > maxLogP) {
+							maxLogP = logP_z[rj];
+						}			
+						
+						// Normalize and do annealing
+						Double1D lP_scaled = (new Double1D(logP_z)).minus(maxLogP);
+						Double1D prob_unnorm = lP_scaled.exp();
+						double p_z_nc = prob_unnorm.sum().value();
+						double lp_z_nc = Math.log(p_z_nc);
+						double[] logP_z_annealed = new double[logP_z.length];
+						int newc_rjindex = rj; // last index
+						maxLogP = -Double.MAX_VALUE;										
+						for (rj=0; rj<logP_z.length; rj++) {
+							if (rj == newc_rjindex || (R.value()[rj] != zi_old_value)) {
+								logP_z_annealed[rj] = (1-1/Tz)*lp_z_nc + (1/Tz)*lP_scaled.value()[rj];
+							} else {
+								logP_z_annealed[rj] = lP_scaled.value()[rj];
+							}
+							if (logP_z_annealed[rj] > maxLogP) {
+								maxLogP = logP_z_annealed[rj];
+							}
+						}
 						
 						// Select a category for this point
-						int newc_rjindex = rj; // last index
-						this.postProb = (new Double1D(logP_z)).minus(maxLogP).exp();
-						int zi_new_rjindex = this.catVariate().value();
+						catDist.setParms((new Double1D(logP_z_annealed)).minus(maxLogP).exp());
+						int zi_new_rjindex = catDist.variate().value();
 						int zi_new_value;
 						if (zi_new_rjindex == newc_rjindex) {
 							int maxActive = R.value()[R.size()-1];
 							zi_new_value = z_γ[γ_val].minNotIn(0, maxActive);
 						} else {
 							zi_new_value = R.value()[zi_new_rjindex];
-						}						
+						}
 						
 						// Sample new category if necessary
 						if (zi_new_rjindex == newc_rjindex) {
@@ -472,7 +524,22 @@ public class MLM_sample_params_varbsel_block extends Model {
 				}
 				// Sample γ
 				double maxLogP = logP_γz[0] > logP_γz[1] ? logP_γz[0] : logP_γz[1];
-				catDist.setParms((new Double1D(logP_γz)).minus(maxLogP).exp());
+				
+				// Normalize and do annealing
+				Double1D lP_scaled = (new Double1D(logP_γz)).minus(maxLogP);
+				Double1D prob_unnorm = lP_scaled.exp();
+				double p_γz_nc = prob_unnorm.sum().value();
+				double lp_γz_nc = Math.log(p_γz_nc);
+				double[] logP_γz_annealed = new double[2];
+				for (int γ_val=0; γ_val<2; γ_val++) {
+					if (γ_val != γ_val_old) {
+						logP_γz_annealed[γ_val] = (1-1/Tγ)*lp_γz_nc + (1/Tγ)*lP_scaled.value()[γ_val];
+					} else {
+						logP_γz_annealed[γ_val] = lP_scaled.value()[γ_val];
+					}
+				}
+				
+				catDist.setParms((new Double1D(logP_γz_annealed)).minus(maxLogP).exp());
 				γ.set(varb,catDist.variate().value());
 				z = z_γ[γ.value()[varb]];
 			}
@@ -496,8 +563,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 		private Double3D A;
 		private int[] γ_indices;
 		private int h_γ;
-
-		public PostA0Dist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
@@ -553,8 +618,6 @@ public class MLM_sample_params_varbsel_block extends Model {
 		// Chain parameters
 		private Double0D α;
 		private Integer1D z;
-
-		public PostAlphaDist() { }
 
 		@Override
 		public void setMCState(ChainLink l) {
@@ -757,7 +820,7 @@ public class MLM_sample_params_varbsel_block extends Model {
 		this.params = new HashMap<String, RandomVar<? extends Flattenable>>();
 		
 		// Extend hyperparameters
-		this.extended_hypers = MLM_sample_params_varbsel_block.extend_hypers(hypers, data, (Double2D) init.get("X"));	
+		this.extended_hypers = MLM_sample_params_varbsel_block.extend_hypers(hypers, data, (Double2D) init.get("X"));
 		
 		// Omega
 		this.params.put("Omega", new RandomVar<Double2D>("Omega", new PostOmegaDist(), (Double2D) init.get("Omega")));
@@ -779,6 +842,18 @@ public class MLM_sample_params_varbsel_block extends Model {
 
 		// alpha
 		this.params.put("alpha", new RandomVar<Double0D>("alpha", new PostAlphaDist(), (Double0D) init.get("alpha")));
+		
+		// Temperature (z)
+		int deadline = ((Integer0D) hypers.get("deadline")).value();
+		
+		double T0z = ((Double0D) hypers.get("T0z")).value();
+		double Tfz = ((Double0D) hypers.get("Tfz")).value();
+		this.params.put("Tz", new RandomVar<Double0D>("Tz", new TemperatureSchedule(T0z, Tfz, deadline), (Double0D) hypers.get("T0z")));
+		
+		// Temperature (γ)
+		double T0g = ((Double0D) hypers.get("T0g")).value();
+		double Tfg = ((Double0D) hypers.get("Tfg")).value();
+		this.params.put("Tγ", new RandomVar<Double0D>("Tγ", new TemperatureSchedule(T0g, Tfg, deadline), (Double0D) hypers.get("T0g")));
 	}
 
 	@Override
@@ -791,6 +866,8 @@ public class MLM_sample_params_varbsel_block extends Model {
 		cl.add(this.params.get("Omega"));
 		cl.add(this.params.get("A0"));
 		cl.add(this.params.get("alpha"));
+		cl.add(this.params.get("Tz"));
+		cl.add(this.params.get("Tγ"));
 		return cl;
 	}
 }

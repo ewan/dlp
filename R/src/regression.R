@@ -136,19 +136,21 @@ dpmlmvb <- function(response.vars, predictor.vars=NULL, class.var=NULL, data,
                       alpha_b=ALPHA_AB(data, response.vars, predictor.vars),
                       tau=TAU(data, response.vars, predictor.vars),
                       init=INIT_DPMLMVB(data, response.vars, predictor.vars),
-                      nsamp=500, nburnin=1200, lag=7, keep_chain=F, faster=T) {
+                      nsamp=500, nburnin=1200, lag=7, keep_chain=F, 
+                      T0z=1,Tfz=1e-3,T0g=1,Tfg=1,
+                      deadline=as.integer(nburnin),faster=F) {
   x <- dataset.temp(response.vars, predictor.vars, class.var, data)
   obscol <- match(predictor.vars, names(data))
   hypers <- list(W=W,S=S,Psi=Psi,kappa=kappa,Phi=Phi,lambda=lambda,
-                 alpha_a=alpha_a,alpha_b=alpha_b,tau=tau)
+                 alpha_a=alpha_a,alpha_b=alpha_b,tau=tau,T0z=T0z,Tfz=Tfz,
+                 T0g=T0g,Tfg=Tfg,deadline=deadline)
   if (faster == T) {
-    model_class <- "org/jqgibbs/models/MLM_sample_params_varbsel_block_cached"
+    model_class <- "org/jqgibbs/models/MLM_sample_params_varbsel_block_cache"
   } else {
     model_class <- "org/jqgibbs/models/MLM_sample_params_varbsel_block"
   }
 
-  m <- jqgibbs(x, mlmvp, "org/jqgibbs/models/MLM_sample_params_varbsel_block", NULL,
-                       "org/jqgibbs/GenericSampler", hypers,
+  m <- jqgibbs(x, mlmvp, model_class, NULL, "org/jqgibbs/GenericSampler", hypers,
                        init, nsamp, nburnin, lag, NULL, F)
   m$obscol <- obscol
   if (!keep_chain) {
