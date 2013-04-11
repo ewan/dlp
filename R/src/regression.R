@@ -137,7 +137,7 @@ dpmlmvb <- function(response.vars, predictor.vars=NULL, class.var=NULL, data,
                       tau=TAU(data, response.vars, predictor.vars),
                       init=INIT_DPMLMVB(data, response.vars, predictor.vars),
                       nsamp=500, nburnin=1200, lag=7, keep_chain=F, 
-                      T0z=1,Tfz=1e-3,T0g=1,Tfg=1, z_lag=as.integer(1),
+                      T0z=1,Tfz=1e-3,T0g=1,Tfg=1, zlag=as.integer(1),
                       deadline=as.integer(nburnin),faster=F) {
   x <- dataset.temp(response.vars, predictor.vars, class.var, data)
   obscol <- match(predictor.vars, names(data))
