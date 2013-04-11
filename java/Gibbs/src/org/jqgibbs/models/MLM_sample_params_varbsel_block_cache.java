@@ -368,7 +368,7 @@ public class MLM_sample_params_varbsel_block_cache extends Model {
 		private Double2D W = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("W"));
 		Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Sⁿ");
 		
-		int z_lag = (Integer) MLM_sample_params_varbsel_block_cached.this.extended_hypers.get("z_lag");
+		int z_lag = (Integer) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("z_lag");
 		double ldet_Sⁿ = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("ldet_Sⁿ");
 		double lτ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτ"));
 		double lτʹ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτʹ"));
