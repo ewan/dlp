@@ -40,6 +40,9 @@ public class MLM_sample_params_varbsel_block_cache extends Model {
 	public static Map<String,Object> extend_hypers(Map<String,Flattenable> hypers, Double2D Y, Double2D X) {
 		Map<String,Object> extended_hypers = new HashMap<String,Object>();
 		
+		Integer z_lag = ((Integer0D) hypers.get("zlag")).value();
+		extended_hypers.put("z_lag", z_lag);
+		
 		Double τ = ((Double0D) hypers.get("tau")).value();
 		extended_hypers.put("τ", τ);
 		extended_hypers.put("lτ", Math.log(τ));
@@ -365,6 +368,7 @@ public class MLM_sample_params_varbsel_block_cache extends Model {
 		private Double2D W = ((Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("W"));
 		Double2D Sⁿ = (Double2D) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("Sⁿ");
 		
+		int z_lag = (Integer) MLM_sample_params_varbsel_block_cached.this.extended_hypers.get("z_lag");
 		double ldet_Sⁿ = (Double) MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("ldet_Sⁿ");
 		double lτ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτ"));
 		double lτʹ = (Double) (MLM_sample_params_varbsel_block_cache.this.extended_hypers.get("lτʹ"));
@@ -461,8 +465,9 @@ public class MLM_sample_params_varbsel_block_cache extends Model {
 							    - h_γ*l2π + 0.5*h_γ*ldet_Sⁿ - 0.5*Sⁿ.mult(A0_W_γ.transposeMult(A0_W_γ)).trace().value(); // Forget log(1)!
 					
 					z_γ[γ_val] = new Integer1D(z.value().clone());
+					for (int l = 0; l < z_lag; l++) {
 					for (int i = 0; i < N; i++) {
-						Integer1D R = z.items();
+						Integer1D R = z_γ[γ_val].items();
 						int zi_old_value = z_γ[γ_val].value()[i];
 						z_γ[γ_val].set(i,-1);
 						
@@ -474,98 +479,99 @@ public class MLM_sample_params_varbsel_block_cache extends Model {
 						
 						// Existing categories
 						int rj = 0;
-						for (rj=0; rj<R.size(); rj++) {
-							int r = R.value()[rj];
-							
-							Double1D Aᵣʹxᵢ = A.get(r).sparsifyRows(γ_indices).transposeMult(xᵢ);
-							Double1D yᵢ_Aᵣʹxᵢ = Y.get(i).minus(Aᵣʹxᵢ);
-							
-							double llik_e_term = -0.5*yᵢ_Aᵣʹxᵢ.mult(Σ.get(r).inverse().mult(yᵢ_Aᵣʹxᵢ));
-							double llik_nc_term = -l2π - 0.5*Math.log(Σ.get(r).det());
-							if (r == zi_old_value) {
-								if (Nᵣᵢ == 0) {
-									logP_z[rj] = -Double.MAX_VALUE;
+							for (rj=0; rj<R.size(); rj++) {
+								int r = R.value()[rj];
+								
+								Double1D Aᵣʹxᵢ = A.get(r).sparsifyRows(γ_indices).transposeMult(xᵢ);
+								Double1D yᵢ_Aᵣʹxᵢ = Y.get(i).minus(Aᵣʹxᵢ);
+								
+								double llik_e_term = -0.5*yᵢ_Aᵣʹxᵢ.mult(Σ.get(r).inverse().mult(yᵢ_Aᵣʹxᵢ));
+								double llik_nc_term = -l2π - 0.5*Math.log(Σ.get(r).det());
+								if (r == zi_old_value) {
+									if (Nᵣᵢ == 0) {
+										logP_z[rj] = -Double.MAX_VALUE;
+									} else {
+										logP_z[rj] = Math.log(Nᵣᵢ) + llik_nc_term + llik_e_term;
+									}
 								} else {
-									logP_z[rj] = Math.log(Nᵣᵢ) + llik_nc_term + llik_e_term;
+									int Nᵣ = z_γ[γ_val].which(r).size();
+									logP_z[rj] = Math.log(Nᵣ) + llik_nc_term + llik_e_term;
 								}
-							} else {
-								int Nᵣ = z_γ[γ_val].which(r).size();
-								logP_z[rj] = Math.log(Nᵣ) + llik_nc_term + llik_e_term;
-							}
+								if (logP_z[rj] == Double.POSITIVE_INFINITY) {
+									logP_z[rj] = Double.MAX_VALUE;
+								}				
+								if (logP_z[rj] > maxLogP) {
+									maxLogP = logP_z[rj];
+								}
+							}	
+							
+							// New category
+							Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
+							Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
+							Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ = Ωᵤ_γ.mult(ΩⁿA0_xᵢyᵢʹ_γ);
+							Double2D Ψᵤ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ_γ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ));
+							double ldet_Ωᵤ_γ = 0.5*p*Math.log(Ωᵤ_γ.det());
+							double ldet_Ψᵤ = 0.5*κ_1.value()*Math.log(Ψᵤ.det());
+							double prior_lil = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ_γ + ldet_Ωᵤ_γ - lπ - lΓκ - ldet_Ψᵤ;
+							logP_z[rj] = lα + prior_lil;
 							if (logP_z[rj] == Double.POSITIVE_INFINITY) {
 								logP_z[rj] = Double.MAX_VALUE;
 							}				
 							if (logP_z[rj] > maxLogP) {
 								maxLogP = logP_z[rj];
-							}
-						}	
-						
-						// New category
-						Double2D Ωᵤ_γ = Ωⁿ_γ.plus(xxʹ_γ[i]).inverse();
-						Double2D ΩⁿA0_xᵢyᵢʹ_γ = ΩⁿA0_γ.plus(xyʹ_γ[i]);
-						Double2D Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ = Ωᵤ_γ.mult(ΩⁿA0_xᵢyᵢʹ_γ);
-						Double2D Ψᵤ = Ψ_A0ʹΩⁿA0_γ.plus(yyʹ[i]).minus(ΩⁿA0_xᵢyᵢʹ_γ.transposeMult(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ));
-						double ldet_Ωᵤ_γ = 0.5*p*Math.log(Ωᵤ_γ.det());
-						double ldet_Ψᵤ = 0.5*κ_1.value()*Math.log(Ψᵤ.det());
-						double prior_lil = lΓκ_1 + ldet_Ψ + ldet_Ωⁿ_γ + ldet_Ωᵤ_γ - lπ - lΓκ - ldet_Ψᵤ;
-						logP_z[rj] = lα + prior_lil;
-						if (logP_z[rj] == Double.POSITIVE_INFINITY) {
-							logP_z[rj] = Double.MAX_VALUE;
-						}				
-						if (logP_z[rj] > maxLogP) {
-							maxLogP = logP_z[rj];
-						}			
-						
-						// Normalize and do annealing
-						Double1D lP_scaled = (new Double1D(logP_z)).minus(maxLogP);
-						Double1D prob_unnorm = lP_scaled.exp();
-						double p_z_nc = prob_unnorm.sum().value();
-						double lp_z_nc = Math.log(p_z_nc);
-						double[] logP_z_annealed = new double[logP_z.length];
-						int newc_rjindex = rj; // last index
-						maxLogP = -Double.MAX_VALUE;										
-						for (rj=0; rj<logP_z.length; rj++) {
-							if (rj == newc_rjindex || (R.value()[rj] != zi_old_value)) {
-								logP_z_annealed[rj] = (1-1/Tz)*lp_z_nc + (1/Tz)*lP_scaled.value()[rj];
-							} else {
-								logP_z_annealed[rj] = lP_scaled.value()[rj];
-							}
-							if (logP_z_annealed[rj] > maxLogP) {
-								maxLogP = logP_z_annealed[rj];
-							}
-						}
-						
-						// Select a category for this point
-						catDist.setParms((new Double1D(logP_z_annealed)).minus(maxLogP).exp());
-						int zi_new_rjindex = catDist.variate().value();
-						int zi_new_value;
-						if (zi_new_rjindex == newc_rjindex) {
-							int maxActive = R.value()[R.size()-1];
-							zi_new_value = z_γ[γ_val].minNotIn(0, maxActive);
-						} else {
-							zi_new_value = R.value()[zi_new_rjindex];
-						}						
-						
-						// Sample new category if necessary
-						if (zi_new_rjindex == newc_rjindex) {
-							// Sample Σ
-							iwDist.setParms(Ψᵤ, κ_1);
-							Double2D Σᵢ = iwDist.variate();
-							Σ.set(zi_new_value, Σᵢ);
-							// Sample A
-							mnDist.setParms(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ, Σᵢ, Ωᵤ_γ);
-							Double2D Aᵢ_γ = mnDist.variate();
-							A.set(zi_new_value, new Double2D(h,p));
-							int row_Aᵢ_γ = 0;
-							for (int row : γ_indices) {
-								for (int col=0; col<p; col++) {
-									A.getDm().set(zi_new_value, row, col, Aᵢ_γ.getDm().get(row_Aᵢ_γ, col));
+							}			
+							
+							// Normalize and do annealing
+							Double1D lP_scaled = (new Double1D(logP_z)).minus(maxLogP);
+							Double1D prob_unnorm = lP_scaled.exp();
+							double p_z_nc = prob_unnorm.sum().value();
+							double lp_z_nc = Math.log(p_z_nc);
+							double[] logP_z_annealed = new double[logP_z.length];
+							int newc_rjindex = rj; // last index
+							maxLogP = -Double.MAX_VALUE;										
+							for (rj=0; rj<logP_z.length; rj++) {
+								if (rj == newc_rjindex || (R.value()[rj] != zi_old_value)) {
+									logP_z_annealed[rj] = (1-1/Tz)*lp_z_nc + (1/Tz)*lP_scaled.value()[rj];
+								} else {
+									logP_z_annealed[rj] = lP_scaled.value()[rj];
 								}
-								row_Aᵢ_γ++;
+								if (logP_z_annealed[rj] > maxLogP) {
+									maxLogP = logP_z_annealed[rj];
+								}
 							}
+							
+							// Select a category for this point
+							catDist.setParms((new Double1D(logP_z_annealed)).minus(maxLogP).exp());
+							int zi_new_rjindex = catDist.variate().value();
+							int zi_new_value;
+							if (zi_new_rjindex == newc_rjindex) {
+								int maxActive = R.value()[R.size()-1];
+								zi_new_value = z_γ[γ_val].minNotIn(0, maxActive);
+							} else {
+								zi_new_value = R.value()[zi_new_rjindex];
+							}						
+							
+							// Sample new category if necessary
+							if (zi_new_rjindex == newc_rjindex) {
+								// Sample Σ
+								iwDist.setParms(Ψᵤ, κ_1);
+								Double2D Σᵢ = iwDist.variate();
+								Σ.set(zi_new_value, Σᵢ);
+								// Sample A
+								mnDist.setParms(Ωᵤ_ΩⁿA0_xᵢyᵢʹ_γ, Σᵢ, Ωᵤ_γ);
+								Double2D Aᵢ_γ = mnDist.variate();
+								A.set(zi_new_value, new Double2D(h,p));
+								int row_Aᵢ_γ = 0;
+								for (int row : γ_indices) {
+									for (int col=0; col<p; col++) {
+										A.getDm().set(zi_new_value, row, col, Aᵢ_γ.getDm().get(row_Aᵢ_γ, col));
+									}
+									row_Aᵢ_γ++;
+								}
+							}
+							z_γ[γ_val].set(i, zi_new_value);
+							logP_γz[γ_val] += logP_z[zi_new_rjindex];
 						}
-						z_γ[γ_val].set(i, zi_new_value);
-						logP_γz[γ_val] += logP_z[zi_new_rjindex];
 					}
 				}
 				// Sample γ
