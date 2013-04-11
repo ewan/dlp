@@ -524,7 +524,7 @@ public class MLM_sample_params_varbsel_block extends Model {
 								}
 							}
 							z_γ[γ_val].set(i, zi_new_value);
-							logP_γz[γ_val] += logP_z[zi_new_rjindex];
+							logP_γz[γ_val] += logP_z[zi_new_rjindex]/((double) z_lag);
 						}
 					}
 				}
