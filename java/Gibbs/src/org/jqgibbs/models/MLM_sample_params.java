@@ -338,6 +338,8 @@ public class MLM_sample_params extends Model {
 		private Double0D α;
 		private double[] prior_lil = new double[N];
 
+		private double Tz;
+		
 		private Double1D postProb;
 		private CategoricalDist catDist = new CategoricalDist();
 		private InverseWishartDist iwDist = new InverseWishartDist();
@@ -355,6 +357,7 @@ public class MLM_sample_params extends Model {
 			this.A = (Double3D) l.get("A").getNumericValue();
 			this.z = (Integer1D) l.get("z").getNumericValue();
 			this.α = (Double0D) l.get("alpha").getNumericValue();
+			this.Tz = ((Double0D) l.get("Tz").getNumericValue()).value();
 			
 			double ldet_Ωⁿ = 0.5*p*Math.log(Ωⁿ.det());	
 			for (int i=0; i<N; i++) {
