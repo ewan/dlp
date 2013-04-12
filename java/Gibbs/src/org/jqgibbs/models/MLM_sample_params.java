@@ -102,6 +102,35 @@ public class MLM_sample_params extends Model {
 		
 		return extended_hypers;
 	}	
+	
+	class TemperatureSchedule extends ProbDistMC<Double0D> {
+		private double lT0;
+		private double lTf;
+		private int deadline;
+		
+		private int t = 0;
+		
+		TemperatureSchedule(double T0, double Tf, int deadline) {
+			this.lT0 = Math.log(T0);
+			this.lTf = Math.log(Tf);
+			this.deadline = deadline;
+		}
+		
+		@Override
+		public void setMCState(ChainLink l) {};
+		
+		@Override
+		protected Double0D genVariate() {
+			double lT;
+			if (t < deadline) {
+				double scale = (++t)/deadline;
+				lT = (1-scale)*lT0 + scale*lTf;
+			} else {
+				lT = lTf;
+			}
+			return new Double0D(Math.exp(lT));
+		}
+	}
 
 	class PostOmegaDist extends ProbDistMC<Double2D> {
 		// Fixed parameters
@@ -420,10 +449,28 @@ public class MLM_sample_params extends Model {
 					maxLogP = logP[rj];
 				}			
 				
-				// Select a category for this point
+				// Normalize and do annealing
+				Double1D lP_scaled = (new Double1D(logP)).minus(maxLogP);
+				Double1D prob_unnorm = lP_scaled.exp();
+				double p_z_nc = prob_unnorm.sum().value();
+				double lp_z_nc = Math.log(p_z_nc);
+				double[] logP_z_annealed = new double[logP.length];
 				int newc_rjindex = rj; // last index
-				this.postProb = (new Double1D(logP)).minus(maxLogP).exp();
-				int zi_new_rjindex = this.catVariate().value();
+				maxLogP = -Double.MAX_VALUE;										
+				for (rj=0; rj<logP.length; rj++) {
+					if (rj == newc_rjindex || (R.value()[rj] != zi_old_value)) {
+						logP_z_annealed[rj] = (1-1/Tz)*lp_z_nc + (1/Tz)*lP_scaled.value()[rj];
+					} else {
+						logP_z_annealed[rj] = lP_scaled.value()[rj];
+					}
+					if (logP_z_annealed[rj] > maxLogP) {
+						maxLogP = logP_z_annealed[rj];
+					}
+				}
+					
+				// Select a category for this point
+				catDist.setParms((new Double1D(logP_z_annealed)).minus(maxLogP).exp());
+				int zi_new_rjindex = catDist.variate().value();
 				int zi_new_value;
 				if (zi_new_rjindex == newc_rjindex) {
 					int maxActive = R.value()[R.size()-1];
@@ -431,7 +478,7 @@ public class MLM_sample_params extends Model {
 				} else {
 					zi_new_value = R.value()[zi_new_rjindex];
 				}
-				
+
 				// Sample new category if necessary
 				if (zi_new_rjindex == newc_rjindex) {
 					Double2D ΩⁿA0_xᵢyᵢʹ = ΩⁿA0.plus(xyʹ[i]);
@@ -726,6 +773,14 @@ public class MLM_sample_params extends Model {
 
 		// alpha
 		this.params.put("alpha", new RandomVar<Double0D>("alpha", new PostAlphaDist(), (Double0D) init.get("alpha")));
+		
+		// Temperature (z)
+		int deadline = ((Integer0D) hypers.get("deadline")).value();
+		
+		double T0z = ((Double0D) hypers.get("T0z")).value();
+		double Tfz = ((Double0D) hypers.get("Tfz")).value();
+		this.params.put("Tz", new RandomVar<Double0D>("Tz", new TemperatureSchedule(T0z, Tfz, deadline), (Double0D) hypers.get("T0z")));
+			
 	}
 
 	@Override
@@ -736,6 +791,7 @@ public class MLM_sample_params extends Model {
 		cl.add(this.params.get("Sigma"));
 		cl.add(this.params.get("Omega"));
 		cl.add(this.params.get("A0"));
+		cl.add(this.params.get("Tz"));
 		cl.add(this.params.get("alpha"));
 		return cl;
 	}
