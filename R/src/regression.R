@@ -175,7 +175,7 @@ dpmlmb <- function(response.vars, predictor.vars=NULL, class.var=NULL, data,
   x <- dataset.temp(response.vars, predictor.vars, class.var, data)
   obscol <- match(predictor.vars, names(x$tronly))
   hypers <- list(W=W,S=S,Psi=Psi,kappa=kappa,Phi=Phi,lambda=lambda,T0z=T0z,Tfz=Tfz,
-                 alpha_a=alpha_a,alpha_b=alpha_b)
+                 alpha_a=alpha_a,alpha_b=alpha_b, deadline=deadline)
   m <- jqgibbs(x, mlmp, "org/jqgibbs/models/MLM_sample_params", NULL,
                        "org/jqgibbs/GenericSampler", hypers,
                        init, nsamp, nburnin, lag, NULL, F)
