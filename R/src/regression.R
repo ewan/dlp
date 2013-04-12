@@ -170,7 +170,8 @@ dpmlmb <- function(response.vars, predictor.vars=NULL, class.var=NULL, data,
                       alpha_a=ALPHA_AA(data, response.vars, predictor.vars),
                       alpha_b=ALPHA_AB(data, response.vars, predictor.vars),
                       init=INIT_DPMLMB(data, response.vars, predictor.vars),
-                      T0z=1,Tfz=1e-3,nsamp=500, nburnin=1200, lag=7, keep_chain=F) {
+                      T0z=1,Tfz=1e-3,deadline=as.integer(nburnin),
+                      nsamp=500, nburnin=1200, lag=7, keep_chain=F) {
   x <- dataset.temp(response.vars, predictor.vars, class.var, data)
   obscol <- match(predictor.vars, names(x$tronly))
   hypers <- list(W=W,S=S,Psi=Psi,kappa=kappa,Phi=Phi,lambda=lambda,T0z=T0z,Tfz=Tfz,
