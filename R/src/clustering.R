@@ -211,7 +211,17 @@ dataset.temp <- function(response.vars, predictor.vars=NULL, class.var=NULL, dat
   return(dataset(data_new))
 }
 
-dataset.data.frame <- function(d) {
+dataset.data.frame <- function(d, response_columns=NULL, class_column=NULL) {
+  labels <- names(d)
+  names(labels) <- names(d)
+  if (!is.null(response_columns)) {
+    labels[response_columns] <- paste("X",1:length(response_columns),sep='')
+  }
+  if (!is.null(class_column)) {
+    labels[class_column] <- "C"
+  }
+  names(d) <- labels
+
   # Create empty object
   ds <- list()
   # Skim identifying characters from column names
@@ -357,47 +367,59 @@ mixture.Mclust <- function(o, data) {
   return(m)
 }
 
-plot.mixture <- function(m,
-                mixture_colors=default.mixture_colors,
-                transform=default.transform,
-                initplot=default.initplot, pch=20,
-                comp_colors=NULL, ...) {
-  # Initialize plot as directed
-  if (!identical(initplot, FALSE)) {
-    initplot(m, ...)
+transform <- function(x, axisstyle) {
+    if (axisstyle == "switched" | axisstyle == "switchedandflipped") {
+      return(x[,2:1])
+    } else {
+      return(x[,1:2])
+    }
+}
+
+autolims <- function(axisstyle, model) {
+    if (is.null(model$data$data)) {
+      stop("Can't get automatic axis: model contains no data")
+    }
+    if (axisstyle == "switched") {
+      xlim <- default.plotlim(model$data$data[,2])
+      ylim <- default.plotlim(model$data$data[,1])
+    } else if (axisstyle == "flipped") {
+      xlim <- default.plotlim(model$data$data[,1])[2:1]
+      ylim <- default.plotlim(model$data$data[,2])[2:1]
+    } else if (axisstyle == "switchedandflipped") {
+      xlim <- default.plotlim(model$data$data[,2])[2:1]
+      ylim <- default.plotlim(model$data$data[,1])[2:1]
+    }
+    return(list(xlim,ylim))
+}
+
+plot.mixture <- function(m, xlab="x", ylab="y", axisstyle="switchedandflipped",
+                            add=F,
+                            xlim="auto", ylim="auto", ...) {
+  if (add==F) {
+    plot.new()
+    if (xlim == "auto") {
+      xlim <- autolims(axisstyle, m)[[1]]
+    }
+    if (ylim == "auto") {
+      ylim <- autolims(axisstyle, m)[[2]]
+    }
+    plot.window(xlim, ylim)
+    axis(1)
+    axis(2)
+    title(xlab=xlab, ylab=ylab)
   }
-  # Get color map
-  colormap <- mixture_colors(m)
-  # Plot points
-  if (class(m)[1] %in% c("flgfd", "flgfa")) {
+
+  if (class(m)[1] %in% c("flgfd", "flgfa", "mog")) {
     z <- m$Z
   } else {
     z <- m$z
   }
-  if (ncol(m$data$data) == 1) {
-    for (k in unique(z)) {
-      d <- m$data$data[z==k,1]
-      if (length(d) > 1) {
-        lines(density(m$data$data[z==k,1]), col=colormap[k])
-      }
-    }
-  } else {
-    pt_colors <- colormap[z]
-    points(transform(m$data$data)[,1:2], col=pt_colors, pch=pch, ...)
-  }
+
   # Plot components
   for (k in unique(z)) {
-    if (identical(comp_colors,"mix")) {
-      plot(component(m, k), m$data, col=colormap[k], transform=transform,
-                            initplot=F, ...)
-    } else if (!identical(comp_colors, NULL)) {
-      plot(component(m, k), m$data, col=comp_colors, transform=transform,
-                            initplot=F, ...)
-    } else {
-      plot(component(m, k), m$data, transform=transform,
-                            initplot=F, ...)
-    }
+    plot(component(m, k), m$data, axisstyle=axisstyle, add=T, ...)
   }
+
 }
 
 order_heur.mixture <- function(m) {
@@ -427,16 +449,16 @@ default.plotlim <- function(v, mar.sc=0.03) {
   return(signif(c(vmin - vmar, vmax + vmar), 2))
 }
 
-default.initplot <- function(m, transform=default.transform,
-                                plotlim=default.plotlim, ylim=c(0,2), ...) {
-  plot.new()
-  if (ncol(m$data$data) == 1) {
-    xlim <- plotlim(m$data$data[,1])
-  } else {
-    xlim <- plotlim(transform(m$data$data)[,1])
-    ylim <- plotlim(transform(m$data$data)[,2])
-  }
-  plot.window(xlim, ylim)
-  axis(1)
-  axis(2)
-}
+#default.initplot <- function(m, transform=default.transform,
+#                                plotlim=default.plotlim, ylim=c(0,2), ...) {
+#  plot.new()
+#  if (ncol(m$data$data) == 1) {
+#    xlim <- plotlim(m$data$data[,1])
+#  } else {
+#    xlim <- plotlim(transform(m$data$data)[,1])
+#    ylim <- plotlim(transform(m$data$data)[,2])
+#  }
+#  plot.window(xlim, ylim)
+#  axis(1)
+#  axis(2)
+#}

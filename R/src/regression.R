@@ -17,8 +17,13 @@ B_B <- function(data, response.vars, predictor.vars) {
   return(1)
 }
 COEF_MEAN_MEAN <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
-  return(array(0, c(ncol(preds)+1,length(response.vars))))
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+  }
+  return(array(0, c(npreds+1,length(response.vars))))
 }
 COEF_MEAN_COV <- function(data, response.vars, predictor.vars) {
   return(cov(data[,response.vars,drop=F]))
@@ -30,29 +35,51 @@ DATA_COV_DF <- function(data, response.vars, predictor.vars) {
   return(length(response.vars)+11)
 }
 COEF_COV_SCALE <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
-  phi <- diag(ncol(preds)+1)
-  for (i in seq(2, length=ncol(preds))) {
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+  }
+  phi <- diag(npreds+1)
+  for (i in seq(2, length=npreds)) {
     phi[i,i] <- 0.5
   }
   return(phi)
 }
 COEF_COV_DF <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
-  return(ncol(preds)+50)
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+  }
+  return(npreds+50)
 }
 COEF_COV_DF_LMB <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
-  return(ncol(preds)+0.5)
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+  }
+  return(npreds+0.5)
 }
 TAU <- function(data, response.vars, predictor.vars) {
   return(0.5)
 }
 
 INIT_DPMLMVB <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+    X <- data.frame(rep(1,nrow(data)))
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+    X <- cbind(1, preds)
+  }
   d <- length(response.vars)
-  h <- ncol(preds)+1
+  h <- npreds+1
   return(list(
     A=array(0, c(h,d,1)),
     Sigma=array(diag(d), c(d,d,1)),
@@ -60,27 +87,38 @@ INIT_DPMLMVB <- function(data, response.vars, predictor.vars) {
     A0=array(0, c(h,d)),
     z=as.integer(rep(0,nrow(data))),
     gamma=as.integer(rep(1,h)),
-    X=cbind(1, preds),
+    X=X,
     alpha=1))
 }
 
 INIT_DPMLMB <- function(data, response.vars, predictor.vars) {
-  preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+  if (is.null(predictor.vars)) {
+    npreds <- 0
+    X <- data.frame(rep(1,nrow(data)))
+  } else {
+    preds <- obs.to.predictors(data[,predictor.vars,drop=F])
+    npreds <- ncol(preds)
+    X <- cbind(1, preds)
+  }
   d <- length(response.vars)
-  h <- ncol(preds)+1
+  h <- npreds+1
   return(list(
     A=array(0, c(h,d,1)),
     Sigma=array(diag(d), c(d,d,1)),
     Omega=diag(h),
     A0=array(0, c(h,d)),
     z=as.integer(rep(0,nrow(data))),
-    X=cbind(1, preds),
+    X=X,
     alpha=1))
 }
 
 INIT_DPMLMLB <- function(data, response.vars, predictor.vars) {
   d <- length(response.vars)
-  h <- 2
+  if (is.null(predictor.vars)) {
+    h <- 1
+  } else {
+    h <- 2
+  }
   return(list(
     A=array(0, c(h,d,1)),
     Sg=array(diag(d), c(d,d,1)),

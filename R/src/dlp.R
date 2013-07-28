@@ -1116,51 +1116,51 @@ fbi.stats <- function() {
 # Special plotting functions
 ###########################################################################
 
-dlp.transform <- function(d) {
-  d[,2:1]
-}
+#dlp.transform <- function(d) {
+#  d[,2:1]
+#}
+#
+#dlp.initplot <- function(m, pretty=T) {
+#  if (pretty) {
+#    par(bg="#fcffdd", family="Georgia")
+#  }
+#  K <- length(unique(m$Z))
+#  r <- rainbow(3*K)
+#  r[1:K] <- r[3*(0:(K-1))+1]
+#  palette(r)
+#  palette(adjustcolor(palette(), alpha.f=0.25))
+#  plot.new()
+#  xlim <- default.plotlim(dlp.transform(m$data$data)[,1])[2:1]
+#  ylim <- default.plotlim(dlp.transform(m$data$data)[,2])[2:1]
+#  plot.window(xlim, ylim)
+#  par(xaxp=c(xlim,5), yaxp=c(ylim,5))
+#  axis(1)
+#  axis(2)
+#}
+#
+#dlp.plot <- function(m, ...) {
+#  plot(m, initplot=dlp.initplot, transform=dlp.transform, pch=20, ...)
+#}
+#
+#paper.initplot <- function (m) {
+#    par(bg = "#ffffff", family = "Times")
+#    K <- length(unique(m$Z))
+#    r <- rainbow(3*K, v=0)
+#    r[1:K] <- r[3*(0:(K-1))+1]
+#    palette(r)
+#    palette(adjustcolor(palette(), alpha.f = 0.25))
+#    plot.new()
+#    xlim <- default.plotlim(dlp.transform(m$data)[, 1])[2:1]
+#    ylim <- default.plotlim(dlp.transform(m$data)[, 2])[2:1]
+#    plot.window(xlim, ylim)
+#    par(xaxp = c(xlim, 5), yaxp = c(ylim, 5))
+#    axis(1)
+#    axis(2)
+#}
 
-dlp.initplot <- function(m, pretty=T) {
-  if (pretty) {
-    par(bg="#fcffdd", family="Georgia")
-  }
-  K <- length(unique(m$Z))
-  r <- rainbow(3*K)
-  r[1:K] <- r[3*(0:(K-1))+1]
-  palette(r)
-  palette(adjustcolor(palette(), alpha.f=0.25))
-  plot.new()
-  xlim <- default.plotlim(dlp.transform(m$data$data)[,1])[2:1]
-  ylim <- default.plotlim(dlp.transform(m$data$data)[,2])[2:1]
-  plot.window(xlim, ylim)
-  par(xaxp=c(xlim,5), yaxp=c(ylim,5))
-  axis(1)
-  axis(2)
-}
-
-dlp.plot <- function(m, ...) {
-  plot(m, initplot=dlp.initplot, transform=dlp.transform, pch=20, ...)
-}
-
-paper.initplot <- function (m) {
-    par(bg = "#ffffff", family = "Times")
-    K <- length(unique(m$Z))
-    r <- rainbow(3*K, v=0)
-    r[1:K] <- r[3*(0:(K-1))+1]
-    palette(r)
-    palette(adjustcolor(palette(), alpha.f = 0.25))
-    plot.new()
-    xlim <- default.plotlim(dlp.transform(m$data)[, 1])[2:1]
-    ylim <- default.plotlim(dlp.transform(m$data)[, 2])[2:1]
-    plot.window(xlim, ylim)
-    par(xaxp = c(xlim, 5), yaxp = c(ylim, 5))
-    axis(1)
-    axis(2)
-}
-
-paper.plot <- function(m, ...) {
-  plot(m, initplot=paper.initplot, transform=dlp.transform, pch=20, ...)
-}
+#paper.plot <- function(m, ...) {
+#  plot(m, initplot=paper.initplot, transform=dlp.transform, pch=20, ...)
+#}
 
 ###
 

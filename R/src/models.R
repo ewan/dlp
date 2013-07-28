@@ -275,10 +275,10 @@ mog.dataset <- function(ds, predict_Z=F) {
   o$mu <- list()
   o$sg <- list()
   clds <- sort(unique(as.numeric(ds$classes)))
-  for (i in 1:length(clds)) {
-    di <- o$data$data[as.numeric(ds$classes)==clds[i],,drop=F]
-    o$mu[[i]] <- colMeans(di)
-    o$sg[[i]] <- cov(di)
+  for (c in clds) {
+    di <- o$data$data[as.numeric(ds$classes)==c,,drop=F]
+    o$mu[[c]] <- colMeans(di)
+    o$sg[[c]] <- cov(di)
   }
   # Initially set actual assignments
   o$Z <- as.numeric(ds$classes)
@@ -289,6 +289,11 @@ mog.dataset <- function(ds, predict_Z=F) {
     o$Z <- as.numeric(classify(o, o$data$data))
   }
   return(o)
+}
+
+mog.data.frame <- function(x, response_columns=NULL, class_column=NULL) {
+
+  return(mog(dataset(x, response_columns, class_column)))
 }
 
 mixture.dataset <- function(ds, ...) {
@@ -688,7 +693,8 @@ plot.lmod <- function(m, data, transform=default.transform,
     initplot(m)
   }
   if (old.school) {
-    h <- ncol(m$X) - 1
+#    h <- ncol(m$X) - 1
+    h <- m$h-1
     center.x <- c(1, rep(0, h))
     center.pred <- predict(m, center.x)
     additional.points <- diag(h)
@@ -698,23 +704,23 @@ plot.lmod <- function(m, data, transform=default.transform,
   }
   additional.preds <- predict(m, cbind(rep(1,nrow(additional.points)),
                                        additional.points)[,m$gamma])
-  if (nrow(m$Sigma) == 1) {
-    plotlim <- par("xaxp")[1:2]
-    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
-    y <- dnorm(plotpts, center.pred, sqrt(m$Sigma))
-    lines(y ~ plotpts, lty=lty.cept, ...)
-    for (i in seq(1, length=nrow(additional.preds))) {
-      y <- dnorm(plotpts, additional.preds[i], sqrt(m$Sigma))
-      lines(y ~ plotpts, lty=lty.slope, ...)
-    }
-  } else {
+#  if (nrow(m$Sigma) == 1) {
+#    plotlim <- par("xaxp")[1:2]
+#    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
+#    y <- dnorm(plotpts, center.pred, sqrt(m$Sigma))
+#    lines(y ~ plotpts, lty=lty.cept, ...)
+#    for (i in seq(1, length=nrow(additional.preds))) {
+#      y <- dnorm(plotpts, additional.preds[i], sqrt(m$Sigma))
+#      lines(y ~ plotpts, lty=lty.slope, ...)
+#    }
+#  } else {
     e <- ellipse(m$Sigma, centre = center.pred, lev = lev, ...)
     lines(transform(e[, 1:2]), lwd = lwd, lty = lty.cept, ...)
     for (i in seq(1, length=nrow(additional.preds))) {
       e <- ellipse(m$Sigma, centre = additional.preds[i,], lev = lev, lwd=lwd, ...)
       lines(transform(e[, 1:2]), lwd = lwd, lty = lty.slope, ...)
     }
-  }
+#  }
 }
 
 predict.lmod <- function(m, X) {
@@ -725,14 +731,24 @@ predict.lmod <- function(m, X) {
   }
 }
 
-
-plot.flgfm <- function(m, data, transform=default.transform,
-                          initplot=default.initplot,
+plot.flgfm <- function(m, data, axisstyle="normal", add=F,
+                          xlim="auto", ylim="auto",
                           lwd=1, lev=0.75, lty.cept=1,
                           lty.slope=2, npts1d=1000, old.school=F, ...) {
-  if (!identical(initplot, FALSE)) {
-    initplot(m)
+  if (add==F) {
+    plot.new()
+    if (xlim == "auto") {
+      xlim <- autolims(axisstyle, m)[[1]]
+    }
+    if (ylim == "auto") {
+      ylim <- autolims(axisstyle, m)[[2]]
+    }
+    plot.window(xlim, ylim)
+    axis(1)
+    axis(2)
+    title(xlab=xlab, ylab=ylab)
   }
+
   if (old.school) {
     h <- ncol(m$B) - 1
     center.x <- c(1, rep(0, h))
@@ -744,22 +760,12 @@ plot.flgfm <- function(m, data, transform=default.transform,
   }
   additional.preds <- predict(m, cbind(rep(1,nrow(additional.points)),
                                        additional.points))
-  if (nrow(m$Sg) == 1) {
-    plotlim <- par("xaxp")[1:2]
-    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
-    y <- dnorm(plotpts, center.pred, sqrt(m$Sg))
-    lines(y ~ plotpts, lty=lty.cept, ...)
-    for (i in seq(1, length=nrow(additional.preds))) {
-      y <- dnorm(plotpts, additional.preds[i], sqrt(m$Sg))
-      lines(y ~ plotpts, lty=lty.slope, ...)
-    }
-  } else {
-    e <- ellipse(m$Sg, centre = center.pred, lev = lev, ...)
-    lines(transform(e[, 1:2]), lwd = lwd, lty = lty.cept, ...)
-    for (i in seq(1, length=nrow(additional.preds))) {
-      e <- ellipse(m$Sg, centre = additional.preds[i,], lev = lev, lwd=lwd, ...)
-      lines(transform(e[, 1:2]), lwd = lwd, lty = lty.slope, ...)
-    }
+  e <- ellipse(m$Sg, centre = center.pred, lev = lev, ...)
+  lines(transform(e[,1:2], axisstyle), lwd = lwd, lty = lty.cept, ...)
+
+  for (i in seq(1, length=nrow(additional.preds))) {
+    e <- ellipse(m$Sg, centre = additional.preds[i,], lev = lev, lwd=lwd, ...)
+    lines(transform(e[, 1:2], axisstyle), lwd = lwd, lty = lty.slope, ...)
   }
 }
 
@@ -991,111 +997,110 @@ mpgha <- function(data, parms.to.elems, v, off.by.one=F) {
   class(o) <- c("mpgha", class(o))
   return(o)
 }
+#
+#bdev.mpgha <- function(m, data=NULL) {
+#  if (is.null(data) | missing(data)) {
+#    data <- m$data
+#  }
+#  clusters <- as.character(m$active)
+#  freq <- summary(as.factor(m$Z))
+#  mds <- matrix(0, nrow(data), length(clusters))
+#  for (i in 1:length(clusters)) {
+#    mds[,i] <- density(pg(m, m$active[i]), data, log=T) + log(freq[clusters[i]])
+#  }
+#  loglik <- sum(apply(mds, 1, max))
+#  return(-2*loglik)
+#}
+#
+#distmat.mpgha <- function(m, x, c, distance=mahal, bias=T) {
+#  classes <- as.character(sort(unique(c)))
+#  clusters <- as.character(m$active)
+#  freq <- summary(as.factor(m$Z))
+#  distmat <- matrix(0, length(classes), length(clusters))
+#  rownames(distmat) <- classes
+#  colnames(distmat) <- clusters
+#  for (cluster in clusters) {
+#    cluster.model <- pg(m, as.numeric(cluster))
+#    for (class in classes) {
+#      points <- x[c==class,]
+#      mds <- distance(cluster.model, points)
+#      if (bias) { # hmm... fixme
+#        mds <- mds + log(freq[cluster])
+#      }
+#      distmat[class,cluster] <- mean(mds)
+#    }
+#  }
+#  return(distmat)
+#}
+#
+#classify.mpgha <- function(m, X) {
+#  clusters <- as.character(m$active)
+#  freq <- summary(as.factor(m$Z))
+#  mds <- matrix(0, nrow(X), length(clusters))
+#  for (i in 1:length(clusters)) {
+#    mds[,i] <- density(pg(m, m$active[i]), X, log=T) + log(freq[clusters[i]])
+#  }
+#  return(clusters[apply(mds, 1, which.max)])
+#}
+#
+#class(mpgha) <- "model.fn"
+#attr(mpgha, "types") <- list(mu=numeric.incomplete, sg=numeric.incomplete,
+#                        be=numeric.incomplete, Z=discrete, B=discrete,
+#                        num=numeric.incomplete, nub=numeric.incomplete,
+#                        mu0=numeric.incomplete, be0=numeric.incomplete,
+#                        x=numeric.incomplete, al=numeric.incomplete)
+#attr(mpgha, "params") <- c("mu", "sg", "be", "Z", "B", "num", "nub", "mu0", "be0", "x", "al")
+#
+#order_heur.mpgha <- order_heur.mog
+#
+#pg.mpgha <- function(m, i) {
+#  o <- list()
+#  o$mu <- m$mu[[i]]
+#  o$be <- m$be[[i]]
+#  o$sg <- m$sg[[i]]
+#  o$pb <- sum(m$B)/length(m$B)
+#  o$d <- length(o$mu)
+#  class(o) <- c("pg") 
+#  return(o)
+#}
+#
+#density.pg <- function(m, X, log=T) {
+#  if (is.null(dim(X))) {
+#    if (length(X) == m$d+1) {
+#      b <- as.numeric(X[length(X)])
+#      return(density(gaussian(m$mu + b*m$be, m$sg), X[1:(length(X)-1)], log))
+#    } else if (length(X) == m$d) {
+#      m0 <- density(gaussian(m$mu, m$sg), X[1:(length(X))], log)
+#      m1 <- density(gaussian(m$mu + m$be, m$sg), X[1:(length(X))], log)
+#      return(max(m0,m1))
+#    } else {
+#      stop("Data has wrong number of dimensions")
+#    }
+#  } else {
+#    return(apply(X, 1, function(x) {density.pg(m, x, log)}))
+#  }
+#}
 
-bdev.mpgha <- function(m, data=NULL) {
-  if (is.null(data) | missing(data)) {
-    data <- m$data
-  }
-  clusters <- as.character(m$active)
-  freq <- summary(as.factor(m$Z))
-  mds <- matrix(0, nrow(data), length(clusters))
-  for (i in 1:length(clusters)) {
-    mds[,i] <- density(pg(m, m$active[i]), data, log=T) + log(freq[clusters[i]])
-  }
-  loglik <- sum(apply(mds, 1, max))
-  return(-2*loglik)
-}
-
-distmat.mpgha <- function(m, x, c, distance=mahal, bias=T) {
-  classes <- as.character(sort(unique(c)))
-  clusters <- as.character(m$active)
-  freq <- summary(as.factor(m$Z))
-  distmat <- matrix(0, length(classes), length(clusters))
-  rownames(distmat) <- classes
-  colnames(distmat) <- clusters
-  for (cluster in clusters) {
-    cluster.model <- pg(m, as.numeric(cluster))
-    for (class in classes) {
-      points <- x[c==class,]
-      mds <- distance(cluster.model, points)
-      if (bias) { # hmm... fixme
-        mds <- mds + log(freq[cluster])
-      }
-      distmat[class,cluster] <- mean(mds)
-    }
-  }
-  return(distmat)
-}
-
-classify.mpgha <- function(m, X) {
-  clusters <- as.character(m$active)
-  freq <- summary(as.factor(m$Z))
-  mds <- matrix(0, nrow(X), length(clusters))
-  for (i in 1:length(clusters)) {
-    mds[,i] <- density(pg(m, m$active[i]), X, log=T) + log(freq[clusters[i]])
-  }
-  return(clusters[apply(mds, 1, which.max)])
-}
-
-class(mpgha) <- "model.fn"
-attr(mpgha, "types") <- list(mu=numeric.incomplete, sg=numeric.incomplete,
-                        be=numeric.incomplete, Z=discrete, B=discrete,
-                        num=numeric.incomplete, nub=numeric.incomplete,
-                        mu0=numeric.incomplete, be0=numeric.incomplete,
-                        x=numeric.incomplete, al=numeric.incomplete)
-attr(mpgha, "params") <- c("mu", "sg", "be", "Z", "B", "num", "nub", "mu0", "be0", "x", "al")
-
-order_heur.mpgha <- order_heur.mog
-
-pg.mpgha <- function(m, i) {
-  o <- list()
-  o$mu <- m$mu[[i]]
-  o$be <- m$be[[i]]
-  o$sg <- m$sg[[i]]
-  o$pb <- sum(m$B)/length(m$B)
-  o$d <- length(o$mu)
-  class(o) <- c("pg") 
-  return(o)
-}
-
-density.pg <- function(m, X, log=T) {
-  if (is.null(dim(X))) {
-    if (length(X) == m$d+1) {
-      b <- as.numeric(X[length(X)])
-      return(density(gaussian(m$mu + b*m$be, m$sg), X[1:(length(X)-1)], log))
-    } else if (length(X) == m$d) {
-      m0 <- density(gaussian(m$mu, m$sg), X[1:(length(X))], log)
-      m1 <- density(gaussian(m$mu + m$be, m$sg), X[1:(length(X))], log)
-      return(max(m0,m1))
-    } else {
-      stop("Data has wrong number of dimensions")
-    }
-  } else {
-    return(apply(X, 1, function(x) {density.pg(m, x, log)}))
-  }
-}
-
-plot.pg <- function(m, transform=default.transform,
-                       initplot=default.initplot,
-                       ntps1d=1000,
-                       ...) {
-  if (!identical(initplot, FALSE)) {
-    initplot(m)
-  }
-  if (nrow(m$sg) == 1) {
-    plotlim <- par("xaxp")[1:2]
-    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
-    y <- dnorm(plotpts, m$mu, sqrt(m$sg))
-    lines(y ~ plotpts, ...)
-    y <- dnorm(plotpts, m$mu+m$be, sqrt(m$sg))
-    lines(y ~ plotpts, ...)
-  } else {
-    e <- ellipse(m$sg, centre=m$mu, ...)
-    e <- ellipse(m$sg, centre=(m$mu+m$be), ...)
-    lines(transform(e[,1:2]), ...)
-    lines(transform(f[,1:2]), ...)
-  }
-}
+#plot.pg <- function(m, initplot=default.initplot,
+#                       ntps1d=1000,
+#                       ...) {
+#  if (!identical(initplot, FALSE)) {
+#    initplot(m)
+#  }
+#  if (nrow(m$sg) == 1) {
+#    plotlim <- par("xaxp")[1:2]
+#    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
+#    y <- dnorm(plotpts, m$mu, sqrt(m$sg))
+#    lines(y ~ plotpts, ...)
+#    y <- dnorm(plotpts, m$mu+m$be, sqrt(m$sg))
+#    lines(y ~ plotpts, ...)
+#  } else {
+#    e <- ellipse(m$sg, centre=m$mu, ...)
+#    e <- ellipse(m$sg, centre=(m$mu+m$be), ...)
+#    lines(transform(e[,1:2]), ...)
+#    lines(transform(f[,1:2]), ...)
+#  }
+#}
 
 gaussian.default <- function(mu, sg) {
   o <- list(mu=mu, sg=sg, d=length(mu))
@@ -1141,20 +1146,24 @@ density.gaussian <- function(m, X, log=T) {
 #}
 
 
-plot.gaussian <- function(g, transform=default.transform,
-                             initplot=default.initplot,
-                             npts1d=1000, ...) {
-  if (!identical(initplot, FALSE)) {
-    initplot(g)
+plot.gaussian <- function(g, add=F, npts1d=1000, xlim="auto", ylim="auto",
+                             axisstyle="normal", ...) {
+  if (add==F) { #FIXME
+    plot.new()
+    if (xlim == "auto") {
+      xlim <- autolims(axisstyle, g)[[1]]
+    }
+    if (ylim == "auto") {
+      ylim <- autolims(axisstyle, g)[[2]]
+    }
+    plot.window(xlim, ylim)
+    axis(1)
+    axis(2)
+    title(xlab=xlab, ylab=ylab)
   }
-  if (nrow(g$sg) == 1) {
-    plotlim <- par("xaxp")[1:2]
-    plotpts <- seq(plotlim[1], plotlim[2], length=npts1d)
-    y <- dnorm(plotpts, g$mu, sqrt(g$sg))
-    lines(y ~ plotpts, ...)
-  } else {
-    e <- ellipse(g$sg, centre=g$mu, ...) # FIXME
-    lines(transform(e[,1:2]), ...)
-  }
+
+
+  e <- ellipse(g$sg, centre=g$mu, ...) # FIXME
+  lines(transform(e[,1:2], axisstyle), ...)
 }
 
