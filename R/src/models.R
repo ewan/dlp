@@ -480,35 +480,70 @@ bdev.flgfa <- function(m, data=NULL) {
   return(-2*loglik)
 }
 
-mlmp <- function(data, parms.to.elems, v, off.by.one=T) {
+
+wtfd2d <- function(o) {
+	result <- matrix(o$rowVec()$value(), o$numRows(), o$numCols()) # byRow??
+	return(result)
+}
+
+wtfd3d <- function(o) {
+	a <- array(o$rowVec()$value(), c(o$numRows(), o$numCols(), o$size()))
+	result <- lapply(apply(a, 3, list), function(m) m[[1]])
+	return(result)
+}
+
+mlmp <- function(data, pteo, off.by.one=T) {
   o <- mixture()
   if (!(missing(data))) {
     d <- ncol(data$data)
     o$data <- data
-    o$z <- v[parms.to.elems[["z"]]]
+    o$z <- as.numeric(pteo$get("z")$getNumericValue()$value())
     if (off.by.one) {
       o$z <- o$z + 1
     }
-    h <- length(parms.to.elems[["A0"]])/d
-    o$A0 <- matrix(v[parms.to.elems[["A0"]]], d, h)
-    o$Omega <- matrix(v[parms.to.elems[["Omega"]]], h, h)
-    o$A <- list()
-    o$Sigma <- list()
-    A.raw <- v[parms.to.elems[["A"]]]
-    Sigma.raw <- v[parms.to.elems[["Sigma"]]]
-    K <- length(A.raw[!is.na(A.raw)])/(d*h)
-    for (i in 1:K) {
-      offset.dh <- (i-1)*d*h
-      offset.dd <- (i-1)*(d^2)
-      o$A[[i]] <- matrix(A.raw[(offset.dh+1):(offset.dh+d*h)], d, h)
-      o$Sigma[[i]] <- matrix(Sigma.raw[(offset.dd+1):(offset.dd+(d^2))], d, d)
-    }
-    o$alpha <- v[parms.to.elems[["alpha"]]]
-    o$active <- which(1:K %in% o$z)
+    o$A0 <- wtfd2d(pteo$get("A0")$getNumericValue())
+    o$Omega <- wtfd2d(pteo$get("Omega")$getNumericValue())
+    o$A <- wtfd3d(pteo$get("A")$getNumericValue())
+    o$Sigma <- wtfd3d(pteo$get("Sigma")$getNumericValue())
+    o$alpha <- pteo$get("alpha")$getNumericValue()$value()
+    o$active <- unique(o$z)
   }
   class(o) <- c("mlmp", class(o))
   return(o)
 }
+
+
+#
+#
+#mlmp <- function(data, parms.to.elems, v, off.by.one=T) {
+#  o <- mixture()
+#  if (!(missing(data))) {
+#    d <- ncol(data$data)
+#    o$data <- data
+#    o$z <- v[parms.to.elems[["z"]]]
+#    if (off.by.one) {
+#      o$z <- o$z + 1
+#    }
+#    h <- length(parms.to.elems[["A0"]])/d
+#    o$A0 <- matrix(v[parms.to.elems[["A0"]]], d, h)
+#    o$Omega <- matrix(v[parms.to.elems[["Omega"]]], h, h)
+#    o$A <- list()
+#    o$Sigma <- list()
+#    A.raw <- v[parms.to.elems[["A"]]]
+#    Sigma.raw <- v[parms.to.elems[["Sigma"]]]
+#    K <- length(A.raw[!is.na(A.raw)])/(d*h)
+#    for (i in 1:K) {
+#      offset.dh <- (i-1)*d*h
+#      offset.dd <- (i-1)*(d^2)
+#      o$A[[i]] <- matrix(A.raw[(offset.dh+1):(offset.dh+d*h)], d, h)
+#      o$Sigma[[i]] <- matrix(Sigma.raw[(offset.dd+1):(offset.dd+(d^2))], d, d)
+#    }
+#    o$alpha <- v[parms.to.elems[["alpha"]]]
+#    o$active <- which(1:K %in% o$z)
+#  }
+#  class(o) <- c("mlmp", class(o))
+#  return(o)
+#}
 
 parm.index.finder.mlmp <- function(model, data, v, order, h) {
   dataparms <- c("z")

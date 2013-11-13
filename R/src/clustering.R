@@ -142,6 +142,10 @@ crucial.points <- function(obs, obscol=(1:ncol(obs))) {
 # Generic functions
 ###########################################################################
 
+classify <- function(m, X, ...) {
+  UseMethod("classify")
+}
+
 evaluate <- function(m, X, C, ...) {
   UseMethod("evaluate")
 }

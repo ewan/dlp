@@ -545,21 +545,41 @@ mixture.qchain <- function(ch) {
   return(m)
 }
 
+#mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel, xhyperobj) {
+#  ch <- qchain(chobj, data, model.fn, jqgmodel) # FIXME??
+#  if (length(.jmethods(J(jqgmodel), "pointEstimate")) > 0) {
+#    ptechlobj <- J(jqgmodel)$pointEstimate(chobj, xhyperobj)
+#    ptechobj <- .jnew("org/jqgibbs/Chain")
+#    ptechobj$addLink(ptechlobj)
+#    ptech <- qchain(ptechobj, data, model.fn, jqgmodel)
+#    pte <- ptech$m[1,]
+#    m <- model.fn(data, ptech$columns, pte, off.by.one=ptech$off.by.one)
+#  } else {
+#    m <- average(ch)
+#  }
+#  m$raw <- ch
+#  return(m)
+#}
+
+
 mixture.jobjRef <- function(chobj, data, model.fn, jqgmodel, xhyperobj) {
   ch <- qchain(chobj, data, model.fn, jqgmodel) # FIXME??
   if (length(.jmethods(J(jqgmodel), "pointEstimate")) > 0) {
     ptechlobj <- J(jqgmodel)$pointEstimate(chobj, xhyperobj)
-    ptechobj <- .jnew("org/jqgibbs/Chain")
-    ptechobj$addLink(ptechlobj)
-    ptech <- qchain(ptechobj, data, model.fn, jqgmodel)
-    pte <- ptech$m[1,]
-    m <- model.fn(data, ptech$columns, pte, off.by.one=ptech$off.by.one)
+		m <- model.fn(data, ptechlobj)
+#    ptechobj <- .jnew("org/jqgibbs/Chain")
+#    ptechobj$addLink(ptechlobj)
+#    ptech <- qchain(ptechobj, data, model.fn, jqgmodel)
+#    pte <- ptech$m[1,]
+#    m <- model.fn(data, ptech$columns, pte, off.by.one=ptech$off.by.one)
   } else {
     m <- average(ch)
   }
   m$raw <- ch
   return(m)
 }
+
+
 
 acor.qchain <- function(ch, tau=1) {
   m <- ch$m

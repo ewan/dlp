@@ -8,6 +8,7 @@ mkdir -p bin/dlp/data
 mkdir -p bin/dlp/inst/java
 
 cp R/DESCRIPTION bin/dlp/
+cp R/NAMESPACE bin/dlp/
 cp R/src/* bin/dlp/R/
 
 cp java/Gibbs/spanish_mfiau_f0.txt bin/dlp/data/JavaTest.txt
