@@ -22,9 +22,12 @@ import org.jqgibbs.mathstat.Double0D;
 import org.jqgibbs.mathstat.Double1D;
 import org.jqgibbs.mathstat.Double2D;
 import org.jqgibbs.mathstat.Double3D;
+import org.jqgibbs.mathstat.Integer0D;
 import org.jqgibbs.mathstat.Integer1D;
 import org.jqgibbs.mathstat.probdist.CategoricalDist;
+import org.jqgibbs.models.MLM_sample_params;
 import org.jqgibbs.models.MLM_sample_params_varbsel_block;
+
 import au.com.bytecode.opencsv.CSVReader;
 
 public class GibbsEwan {
@@ -41,7 +44,7 @@ public class GibbsEwan {
 		return ssd;
 	}
 
-	private static String dataFileName = "/Users/ewan/Work/School/Projects/dlp/java/Gibbs/spanish_mfiau_f0.txt";
+	private static String dataFileName = "/Users/emd/Work/active_projects/dlp_project/dlp/java/Gibbs/spanish_mfiau_f0.txt";
 //	private static String dataFileName = "/Users/ewan/Work/School/Projects/DLEN/Data/hillsmall.txt";
 	private static int maxIter = 500;
 	private static int burnIn = 0;
@@ -93,6 +96,9 @@ public class GibbsEwan {
 		Double2D cov = Y.cov();
 		Double2D XʹX = X.transposeMult(X);
 		
+		hypers.put("deadline", new Integer0D(1));
+		hypers.put("T0z", new Double0D(1));
+		hypers.put("Tfz", new Double0D(1));
 //		hypers.put("beta", new Double0D(1));
 		hypers.put("W", new Double2D(h, p));
 		hypers.put("S", cov);
@@ -174,10 +180,13 @@ public class GibbsEwan {
 		
 		
 		// run gibbs sampler
-		//Model m = new MLM_sample_params(hypers, init, Y); 
-		Model m = new MLM_sample_params_varbsel_block(hypers, init, Y); 
+		Model m = new MLM_sample_params(hypers, init, Y); 
+		//Model m = new MLM_sample_params_varbsel_block(hypers, init, Y); 
 		//Model m = new MLM_noparams(hypers, init, Y); 
 		Sampler s = new GenericSampler(m);
+		
+		System.err.println(System.currentTimeMillis());
+		
 		for (int i = 0; i < burnIn; i++) {
 			if (i % 25 == 0) {
 				System.err.println("Burnin iteration " + String.valueOf(i + 1));
@@ -194,11 +203,17 @@ public class GibbsEwan {
 				s.variate();
 			}
 		}
+		
+		System.err.println(System.currentTimeMillis());
+		
 		// finish up
 		ChainWriter cw = new ChainWriter(GibbsEwan.outFileName, m);
 		cw.write(c);
 		// ChainLink pte = MLM_sample_params.pointEstimate(c, d);
 		ChainLink pte = MLM_sample_params_varbsel_block.pointEstimate(c, MLM_sample_params_varbsel_block.extend_hypers(hypers, Y, X));
+		
+		System.err.println(System.currentTimeMillis());
+		
 		c = new Chain();
 		c.addLink(pte);
 		cw = new ChainWriter(GibbsEwan.pteFileName, m);
